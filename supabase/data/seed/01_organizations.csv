@@ -1,0 +1,84 @@
+id,parent_org_id,org_type,code,name,name_en,country_code,currency_code,status
+7981d385-68e5-0584-eae9-b72c419c3ed1,,internal,EVAS,에바스코스메틱,EVAS Cosmetic,KR,KRW,active
+02394d8d-2084-0464-d6d1-2ef40243a829,,vendor,INDULTON,인덜톤,Indulton,KR,KRW,active
+9c12405d-bf39-add4-593c-9ac9b828f8ce,,buyer_country,RU,러시아,Russia,RU,USD,active
+b46f6900-e3eb-8fed-9529-92f06466f455,9c12405d-bf39-add4-593c-9ac9b828f8ce,buyer_company,STIMUL,스티물글로벌,Stimul Global,RU,USD,active
+b8df3f18-5378-df80-7bfe-a8c78f7d9a21,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_노보시브르스크,스티물 노보시브르스크,Stimul 노보시브르스크,RU,USD,active
+13bdd9ed-26b8-b839-cb51-fc3495de6f04,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_노보시비르스크,스티물 노보시비르스크,Stimul 노보시비르스크,RU,USD,active
+ce704b38-2bb5-1ef4-a17a-aad1e0781511,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_모스크바,스티물 모스크바,Stimul 모스크바,RU,USD,active
+7e407c8f-7a6d-f0f3-2a18-5158d9f60864,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_민스크,스티물 민스크,Stimul 민스크,BY,USD,active
+50a6b7a2-e040-42c4-acd0-9e1ede4d74aa,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_블라디보스크,스티물 블라디보스크,Stimul 블라디보스크,RU,USD,active
+5caa8393-23e6-91df-79fc-eb44a5abb4ed,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_블라디보스톡,스티물 블라디보스톡,Stimul 블라디보스톡,RU,USD,active
+a4372118-5231-b29d-46cf-39de6b3a0ab6,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_슬라브스카야,스티물 슬라브스카야,Stimul 슬라브스카야,RU,USD,active
+a575d5b3-6e0b-f8d7-26a5-361b4d8c7a38,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_에스토니아,스티물 에스토니아,Stimul 에스토니아,EE,USD,active
+659702ff-b1d7-4a5a-322c-fb02ea277a7a,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_우크라이나,스티물 우크라이나,Stimul 우크라이나,UA,USD,active
+916a2f41-7988-e877-bdb2-d7c995d50e2b,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_카자흐스탄,스티물 카자흐스탄,Stimul 카자흐스탄,KZ,USD,active
+35d15f70-ad6c-0996-31e8-7736827a530f,b46f6900-e3eb-8fed-9529-92f06466f455,buyer_ship_to,STIMUL_크라스노다르,스티물 크라스노다르,Stimul 크라스노다르,RU,USD,active
+1bafb688-1285-25ed-a31b-20aaa24d3951,,buyer_country,KR,한국,South Korea,KR,KRW,active
+82afb17c-a4d6-07a0-8fde-a1bc788537a9,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_(주) 유닉스글로벌,(주) 유닉스글로벌로지스틱스,(주) 유닉스글로벌로지스틱스,KR,KRW,active
+d9fd5974-3e7d-87e9-08fa-c606f361b168,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_(주)벨레코,(주)벨레코,(주)벨레코,KR,KRW,active
+cb1a9dfb-76a8-d57b-556a-a5d91ec1eb2d,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_(주)비앤케이,(주)비앤케이,(주)비앤케이,KR,KRW,active
+05bfd04c-98a7-1f50-6958-7b0aa50a1b49,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_(주)세미르,(주)세미르,(주)세미르,KR,KRW,active
+f153cbda-c8cd-a79f-6eb4-d8ca28306465,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_(주)에이치앤씨에스,(주)에이치앤씨에스코리아,(주)에이치앤씨에스코리아,KR,KRW,active
+bb0be842-8643-cda8-98a9-d6ec21101889,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_다코스코리아,다코스코리아,다코스코리아,KR,KRW,active
+7b9298c6-6df9-9d47-6d92-43f9cf380602,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_디엠케이코리아,디엠케이코리아,디엠케이코리아,KR,KRW,active
+051089ad-3cd8-ffb8-e29a-8db0345c6bc4,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_Real Korea,레알코리아(Real Korea),Real Korea,KR,KRW,active
+ce4e2165-05f4-b476-5268-a8ca283828a5,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_로더,로더,로더,KR,KRW,active
+11fa79f2-9025-df6f-528b-e74df5e429bc,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_릴리코스,릴리코스,릴리코스,KR,KRW,active
+3cc2a670-f678-abc5-73a0-d8feb9f6d0cc,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_미흥글로벌주식회사,미흥글로벌주식회사,미흥글로벌주식회사,KR,KRW,active
+f5357e91-0842-d6cf-85f9-bf548843aba8,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_SEOUL SISTERS,서울시스터즈(SEOUL SISTERS),SEOUL SISTERS,KR,KRW,active
+f52e919f-6e97-a90d-18ec-b3c12e7953cd,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_C&T internation,"씨앤티인터내셔널 주식회사(C&T international Co.,Ltd.)",C&T international Co.,KR,KRW,active
+85dd2510-4aa2-e14a-1c2d-c5fd712a0dbe,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_아이븐,아이븐,아이븐,KR,KRW,active
+c720ed24-24d6-6e87-ccc0-3ac33beaacda,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_SM INDUSTRIES,에스엠 인더스트리즈(SM INDUSTRIES),SM INDUSTRIES,KR,KRW,active
+1a0df6f8-55b1-fcc4-a42e-20c6f1f194ad,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_MN POST CO.,"엠엔포스트 주식회사(MN POST CO.,LTD)",MN POST CO.,KR,KRW,active
+a84239ff-a42e-e4fe-f43c-46cd4468cb41,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_와이엠디,와이엠디,와이엠디,KR,KRW,active
+48c130cd-8e5a-515c-9d94-ad1b0ba55d7f,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_유니코코리아,유니코코리아,유니코코리아,KR,KRW,active
+cf6ca0fe-7f80-a80f-a8f4-eaed94b138ad,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_이거유,이거유,이거유,KR,KRW,active
+27e20d2e-f279-22f7-f987-38ae5fd10955,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_이제이무역,이제이무역,이제이무역,KR,KRW,active
+ba3cc6de-dd69-3c2c-e0c6-cef2a9e08aa5,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 금성티케이,주식회사 금성티케이,주식회사 금성티케이,KR,KRW,active
+75d7e3fa-8c95-0580-8ccf-07aeee8adb9d,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_the FOL Co.,"주식회사 더폴(the FOL Co.,Ltd.)",the FOL Co.,KR,KRW,active
+e5a941c7-1ebd-4178-66eb-c4378c1dc026,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 메드비,주식회사 메드비,주식회사 메드비,KR,KRW,active
+19550961-d42d-33b1-c367-83823e9f16ab,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 삼현,주식회사 삼현,주식회사 삼현,KR,KRW,active
+d7175167-7256-dd91-61ec-84d5303c5210,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_L.gabe lnc.,주식회사 엘가베(L.gabe lnc.),L.gabe lnc.,KR,KRW,active
+0796551d-13d0-9908-78d6-23480d1a2895,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 엘앤씨에스,주식회사 엘앤씨에스,주식회사 엘앤씨에스,KR,KRW,active
+66a064f1-3759-bf66-7625-2d353f0b9911,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 오행상사,주식회사 오행상사,주식회사 오행상사,KR,KRW,active
+2256862b-9ab8-f614-c989-a40e801e7174,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 이지코리아,주식회사 이지코리아,주식회사 이지코리아,KR,KRW,active
+b0662d4a-11e6-1cfa-0b29-79bbc1f69c8c,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 정현아이엔,주식회사 정현아이엔티,주식회사 정현아이엔티,KR,KRW,active
+77bae0f7-2959-6a25-34bf-aca47d486e15,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 코스비즈,주식회사 코스비즈,주식회사 코스비즈,KR,KRW,active
+d7a2072e-f8b9-c373-e918-dad83aa91e00,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_주식회사 파인인터네,주식회사 파인인터네셔널,주식회사 파인인터네셔널,KR,KRW,active
+46dbdd77-f334-47ad-7fc8-5c52f2de9f5c,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_WallabyCo.,"주식회사왈라비(WallabyCo.,Ltd)",WallabyCo.,KR,KRW,active
+679801ce-93cf-e6fe-90f4-6cddcb483998,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_지미,지미,지미,KR,KRW,active
+a86297a7-f5bd-2d70-5e18-8f16272b4c9e,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_GM Household & ,지엠생활건강(GM Household & Health care),GM Household & Health care,KR,KRW,active
+375c693f-7e15-be9b-727b-ca833a9d848d,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,DIRECT_ETC,직수출 (기타),Direct Export (Others),KR,USD,active
+8834867f-ee77-3d01-28c4-20d66b89c32f,,buyer_country,TW,대만,Taiwan,TW,USD,active
+20fd5af1-7a98-8a45-cfe9-3018ad5fccb0,8834867f-ee77-3d01-28c4-20d66b89c32f,buyer_company,DIRECT_TW_대만,직수출 대만,Direct Export 대만,TW,USD,active
+66721439-d900-8262-c205-c30d8536ba3c,,buyer_country,LV,라트비아,Latvia,LV,EUR,active
+ca85dcd5-8a7b-6c6d-5ce8-5aa61d5ad479,66721439-d900-8262-c205-c30d8536ba3c,buyer_company,DIRECT_LV_라트비아,직수출 라트비아,Direct Export 라트비아,LV,USD,active
+43fd8426-5fa8-d932-0f22-3a4a7d96042a,9c12405d-bf39-add4-593c-9ac9b828f8ce,buyer_company,DIRECT_RU_러시아,직수출 러시아,Direct Export 러시아,RU,USD,active
+46939234-9c1f-fddc-8d33-5435764f0112,,buyer_country,MK,북마케도니아,North Macedonia,MK,EUR,active
+1206d3cc-6241-095f-2225-fccbdb3dad97,46939234-9c1f-fddc-8d33-5435764f0112,buyer_company,DIRECT_MK_마케도니아,직수출 마케도니아,Direct Export 마케도니아,MK,USD,active
+6ac01e51-d22d-fbbb-1a9a-9b406c7d93c2,,buyer_country,MY,말레이시아,Malaysia,MY,USD,active
+602f6d54-e61f-959d-29c7-77f12e45a08e,6ac01e51-d22d-fbbb-1a9a-9b406c7d93c2,buyer_company,DIRECT_MY_말레이시아,직수출 말레이시아,Direct Export 말레이시아,MY,USD,active
+2de3f16e-dc7a-3e47-8b7e-f07369a47e86,,buyer_country,MM,미얀마,Myanmar,MM,USD,active
+d43e71ed-3594-ac08-6b5f-6cae73e2b401,2de3f16e-dc7a-3e47-8b7e-f07369a47e86,buyer_company,DIRECT_MM_미얀마,직수출 미얀마,Direct Export 미얀마,MM,USD,active
+9abaa8e6-6739-f109-35eb-e750f8a70d6d,,buyer_country,VN,베트남,Vietnam,VN,USD,active
+f85e6144-7da8-33a1-4098-1b8b657cebcd,9abaa8e6-6739-f109-35eb-e750f8a70d6d,buyer_company,DIRECT_VN_베트남,직수출 베트남,Direct Export 베트남,VN,USD,active
+30099b4e-4251-ebe0-e685-b1f10d032f75,9abaa8e6-6739-f109-35eb-e750f8a70d6d,buyer_company,DIRECT_VN_베트남2 MYCO,직수출 베트남2 MYCO,Direct Export 베트남2 MYCO,VN,USD,active
+a7011d25-f671-26a9-6e51-5037a1a91243,,buyer_country,SK,슬로바키아,Slovakia,SK,EUR,active
+16e5992e-dac3-53cf-b596-f67e668239f8,a7011d25-f671-26a9-6e51-5037a1a91243,buyer_company,DIRECT_SK_슬로바키아,직수출 슬로바키아,Direct Export 슬로바키아,SK,USD,active
+e3522c0c-904c-db41-feb6-e149c47f2d93,,buyer_country,UA,우크라이나,Ukraine,UA,USD,active
+a5c2c374-daf8-94e7-8ca4-071ce9581dd6,e3522c0c-904c-db41-feb6-e149c47f2d93,buyer_company,DIRECT_UA_우크라이나 ICOS,직수출 우크라이나 ICOSMO,Direct Export 우크라이나 ICOSMO,UA,USD,active
+b34f4280-d73a-6b6b-0904-f9b19e7b2be4,e3522c0c-904c-db41-feb6-e149c47f2d93,buyer_company,DIRECT_UA_우크라이나,직수출 우크라이나,Direct Export 우크라이나,UA,USD,active
+f6c547d4-9e0c-4760-9740-145a1f21288b,e3522c0c-904c-db41-feb6-e149c47f2d93,buyer_company,DIRECT_UA_우크라이나KBT,직수출 우크라이나KBT,Direct Export 우크라이나KBT,UA,USD,active
+64fa56ea-3856-e5b9-1bf6-639b9f1e0c35,,buyer_country,CN,중국,China,CN,USD,active
+00ffb39b-28d7-49f8-00d7-2445e61e9c77,64fa56ea-3856-e5b9-1bf6-639b9f1e0c35,buyer_company,DIRECT_CN_위해방정,직수출 위해방정,Direct Export 위해방정,CN,USD,active
+7019163b-3563-c569-18b4-331c0abd66bb,,buyer_country,EU,유럽,Europe,EU,EUR,active
+5497275d-678c-47d2-c493-a1c193e196ec,7019163b-3563-c569-18b4-331c0abd66bb,buyer_company,DIRECT_EU_유럽 ICOSMO),직수출 유럽 ICOSMO),Direct Export 유럽 ICOSMO),EU,USD,active
+3b5407fa-18de-3305-932b-77b7f7ae6c61,7019163b-3563-c569-18b4-331c0abd66bb,buyer_company,DIRECT_EU_유럽,직수출 유럽,Direct Export 유럽,EU,USD,active
+53115b99-10d9-154a-85e3-f07783b03f9b,,buyer_country,KH,캄보디아,Cambodia,KH,USD,active
+a0917f72-8316-f74e-f48a-6303dcc0d04e,53115b99-10d9-154a-85e3-f07783b03f9b,buyer_company,DIRECT_KH_캄보디아,직수출 캄보디아,Direct Export 캄보디아,KH,USD,active
+538ee222-451d-02dd-ce9d-56b3c14b7b00,,buyer_country,AU,호주,Australia,AU,AUD,active
+a839f256-6f10-abb0-dfa0-b43481adb724,538ee222-451d-02dd-ce9d-56b3c14b7b00,buyer_company,DIRECT_AU_호주,직수출 호주,Direct Export 호주,AU,USD,active
+79e79cda-0dd3-97f6-c570-05b605c6751e,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_Kloud,클라우드121 (Kloud121),Kloud,KR,KRW,active
+f0160f7a-d29f-a117-c64d-49ee7d7b9cba,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_tovplan Co.,"토브플랜주식회사(tovplan Co.,Ltd.)",tovplan Co.,KR,KRW,active
+3b246a52-7cce-23f5-599f-227fb9134994,1bafb688-1285-25ed-a31b-20aaa24d3951,buyer_company,AGT_티엠코리아무역,티엠코리아무역,티엠코리아무역,KR,KRW,active
