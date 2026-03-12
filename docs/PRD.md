@@ -104,11 +104,18 @@
 ### 4.2 발주 (Order)
 
 **FR-ORD-01**: 장바구니 = draft 주문 (별도 cart 테이블 없음)
-**FR-ORD-02**: 품목별 수량 입력, 입수량(units_per_case) 가이드 표시
+**FR-ORD-02**: **📦 박스(case) 단위 주문 필수** — 모든 수량은 박스 단위로만 입력
+  - 입력 UI: `[N] boxes × [units_per_case] pcs = [total] pcs` 실시간 표시
+  - 최소 주문: 1 box, 낱개 주문 불가
+  - `requested_qty` = 박스 수, `requested_unit_qty` = 박스 수 × units_per_case (자동 계산, 저장)
+  - units_per_case 미등록 제품 → "입수량 확인 필요" 경고, 주문은 가능하되 pcs 미표시
 **FR-ORD-03**: 희망 납기일 선택
 **FR-ORD-04**: 출고지(buyer_ship_to) 선택
 **FR-ORD-05**: 발주 요청 → status: submitted, submitted_at 기록
 **FR-ORD-06**: 재주문 — 과거 주문 복제 원클릭
+**FR-ORD-07**: 팔레트/컨테이너 요약 자동 표시
+  - 총 박스 수, 총 CBM, 예상 팔레트 수, 컨테이너 타입 추천
+  - 발주 전 물류비 감각 제공 (바이어가 수량 조절 유도)
 
 ### 4.3 주문 상태 머신
 

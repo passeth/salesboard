@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-03-13 — 박스 단위 주문 체계
+
+### FR-ORD-02 변경: 박스(case) 단위 주문 필수
+- **변경 사유**: 수출은 박스 단위로 적재/출하 — 낱개 주문은 현실과 안 맞음 (passeth 요청)
+- **변경 내용**:
+  - 모든 qty 입력 = 박스 수량, unit_qty = 자동 계산 (boxes × units_per_case)
+  - order_items에 `units_per_case` 스냅샷 + generated `*_unit_qty` 4개 컬럼 추가
+  - 발주 UI: `[N] boxes × [M] pcs = [total] pcs` 실시간 표시
+  - 발주 요약에 팔레트/컨테이너 시뮬레이션 추가 (FR-ORD-07)
+- **마이그레이션**: `20260313_000003_box_unit_ordering.sql`
+- **영향 문서**: PRD.md (§4.2), pages-spec.md (§6, §13, §19)
+- 결정자: passeth
+
+---
+
 ## 2026-03-12 — 프로젝트 킥오프
 
 ### 데이터 모델 확정

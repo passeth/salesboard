@@ -54,7 +54,12 @@
 
 ### 6. 발주하기 `/buyer/order/new`
 - **장바구니 = draft 주문**: 카탈로그에서 추가한 품목 리스트
-- 품목별 수량 입력 (`requested_qty`, 입수량 단위 가이드 `units_per_case` 표시)
+- **📦 박스 단위 주문 (필수)**:
+  - 모든 수량 입력은 **박스(case) 단위**로만 가능 (낱개 주문 불가)
+  - 입력 UI: `[수량 입력] boxes × [입수량] pcs = [총 수량] pcs` 실시간 표시
+  - 최소 주문: 1박스
+  - `requested_qty` = **박스 수**, `requested_unit_qty` = 박스 수 × `units_per_case` (자동 계산)
+  - 입수량 미등록 제품(`units_per_case` = null) → 박스 수량 입력 후 "입수량 확인 필요" 경고 표시
 - 희망 납기일 선택 (`requested_delivery_date`)
 - 출고지(지사) 선택 — `organizations`(type=buyer_ship_to)
 - 메모 입력
@@ -123,7 +128,7 @@
 ### 13. 바이어 주문 관리 `/vendor/orders`
 - 담당 바이어 발주 목록
 - `submitted` 상태 건 → 벤더 컨펌 필요 하이라이트
-- 품목별 `vendor_confirmed_qty` 입력
+- 품목별 `vendor_confirmed_qty` 입력 (박스 단위, `N boxes × M pcs = total` 표시)
 - 컨펌 → `status: vendor_review` → 영업으로 전달
 - 반려 → `order_events`에 `vendor_adjusted` + note 기록
 - 벤더 없는 거래처 주문은 여기에 안 뜸 (바로 영업으로)
@@ -179,13 +184,14 @@
 ### 19. 발주 검토 상세 `/sales/orders/:id`
 **이 페이지가 운영의 핵심.**
 
-- **품목별 검토 패널**:
-  | 항목 | 데이터 소스 |
-  |------|-----------|
-  | 희망수량 | `order_items.requested_qty` |
-  | 벤더 확인수량 | `order_items.vendor_confirmed_qty` |
-  | 가용재고 (lot별) | `inventory_lots` (available_qty, expiry_date, confidence_status) |
-  | 생산예정 | `supply_plans` (plan_type, expected_available_date, planned_qty) |
+- **품목별 검토 패널** (모든 수량은 박스 단위):
+  | 항목 | 데이터 소스 | 표시 |
+  |------|-----------|------|
+  | 희망수량 | `order_items.requested_qty` | N boxes (M pcs) |
+  | 벤더 확인수량 | `order_items.vendor_confirmed_qty` | N boxes (M pcs) |
+  | 영업 확인수량 | `order_items.sales_confirmed_qty` | N boxes (M pcs) |
+  | 가용재고 (lot별) | `inventory_lots` (available_qty, expiry_date, confidence_status) | 박스 환산 표시 |
+  | 생산예정 | `supply_plans` (plan_type, expected_available_date, planned_qty) | 박스 환산 표시 |
 
 - **lot 선택 UI**:
   - lot별 유통기한, 가용수량, 신뢰도(`confidence_status`) 표시
