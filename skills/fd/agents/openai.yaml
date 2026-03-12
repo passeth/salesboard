@@ -1,0 +1,6 @@
+interface:
+  display_name: "FD"
+  short_description: "Claude-first UI drafts with Codex finishing"
+  default_prompt: "Use $fd to get a Claude-first UI draft and then finish the implementation safely."
+policy:
+  allow_implicit_invocation: false
