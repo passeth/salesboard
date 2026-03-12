@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter);
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-status-draft: hsl(var(--status-draft));
+  --color-status-submitted: hsl(var(--status-submitted));
+  --color-status-vendor-review: hsl(var(--status-vendor-review));
+  --color-status-sales-review: hsl(var(--status-sales-review));
+  --color-status-needs-decision: hsl(var(--status-needs-decision));
+  --color-status-confirmed: hsl(var(--status-confirmed));
+  --color-status-rejected: hsl(var(--status-rejected));
+  --color-status-invoiced: hsl(var(--status-invoiced));
+  --color-status-partially-shipped: hsl(var(--status-partially-shipped));
+  --color-status-shipped: hsl(var(--status-shipped));
+  --color-status-completed: hsl(var(--status-completed));
+  --color-status-cancelled: hsl(var(--status-cancelled));
+
+  --color-sidebar-background: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: 240 14% 98%;
+  --foreground: 242 91% 9%;
+  --card: 0 0% 100%;
+  --card-foreground: 242 91% 9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 242 91% 9%;
+
+  --primary: 242 100% 68%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 240 7% 97%;
+  --secondary-foreground: 242 91% 9%;
+
+  --muted: 240 7% 97%;
+  --muted-foreground: 220 9% 46%;
+
+  --accent: 246 79% 93%;
+  --accent-foreground: 242 100% 68%;
+
+  --destructive: 355 78% 46%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 242 100% 68%;
+
+  --chart-1: 218 100% 68%;
+  --chart-2: 242 100% 68%;
+  --chart-3: 44 100% 71%;
+  --chart-4: 16 100% 71%;
+  --chart-5: 191 76% 52%;
+
+  --status-draft: 220 9% 65%;
+  --status-submitted: 217 91% 60%;
+  --status-vendor-review: 262 83% 58%;
+  --status-sales-review: 38 92% 50%;
+  --status-needs-decision: 24 95% 53%;
+  --status-confirmed: 160 84% 39%;
+  --status-rejected: 0 84% 60%;
+  --status-invoiced: 239 84% 67%;
+  --status-partially-shipped: 173 80% 40%;
+  --status-shipped: 160 95% 30%;
+  --status-completed: 160 95% 24%;
+  --status-cancelled: 220 9% 46%;
+
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 242 91% 9%;
+  --sidebar-primary: 242 100% 68%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 246 79% 93%;
+  --sidebar-accent-foreground: 242 100% 68%;
+  --sidebar-border: 220 14% 96%;
+  --sidebar-ring: 242 100% 68%;
+
+  --radius: 0.625rem;
+}
+
+.dark {
+  --background: 242 45% 10%;
+  --foreground: 240 14% 98%;
+  --card: 242 35% 14%;
+  --card-foreground: 240 14% 98%;
+  --popover: 242 35% 14%;
+  --popover-foreground: 240 14% 98%;
+
+  --primary: 242 100% 76%;
+  --primary-foreground: 242 45% 10%;
+
+  --secondary: 242 24% 18%;
+  --secondary-foreground: 240 14% 98%;
+
+  --muted: 242 24% 18%;
+  --muted-foreground: 240 6% 66%;
+
+  --accent: 242 33% 22%;
+  --accent-foreground: 240 14% 98%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 242 20% 28%;
+  --input: 242 20% 28%;
+  --ring: 242 100% 76%;
+
+  --sidebar-background: 242 35% 12%;
+  --sidebar-foreground: 240 14% 98%;
+  --sidebar-primary: 242 100% 76%;
+  --sidebar-primary-foreground: 242 45% 10%;
+  --sidebar-accent: 242 33% 22%;
+  --sidebar-accent-foreground: 240 14% 98%;
+  --sidebar-border: 242 20% 24%;
+  --sidebar-ring: 242 100% 76%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+}
