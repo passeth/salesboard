@@ -221,8 +221,11 @@
   - `subtotal_amount`, `tax_amount`, `total_amount`
   - `payment_terms` 설정 (Net 30, T/T 등)
   - `due_date` 설정
-- PDF 생성 → `documents`(owner_type=invoice)에 저장
-- 이메일 발송
+- **📥 다운로드**:
+  - PDF 생성 → `documents`(owner_type=invoice)에 저장
+  - **엑셀(xlsx) 다운로드** — 품목/수량/단가/금액 테이블 형태
+  - 인보이스 템플릿: 에바스 로고 + 바이어 정보 + payment terms
+- 이메일 발송 (PDF + xlsx 첨부)
 - 결제 상태 추적: `payment_status` (pending → partial → paid / overdue)
 - **테이블**: `invoices`, `orders`, `order_items`, `documents`
 
@@ -294,10 +297,12 @@
   - 패킹 요약에 "⚠️ 비완박스 포함" 표시
   - 사유 입력 필수 (`partial_reason`)
 
-- **쉬핑마크 자동 발급**:
+- **🏷️ 쉬핑마크 자동 발급 + 출력**:
   - 팔레트별 `shipping_mark` 생성 (바이어 정보 + 유통기한 + 로트)
   - `earliest_expiry_date`, `latest_expiry_date` 자동 집계
-  - PDF 생성 → `documents`(owner_type=shipment_pallet, type=shipping_mark)
+  - **PDF 생성** → `documents`(owner_type=shipment_pallet, type=shipping_mark)
+  - **인쇄 버튼** → 브라우저 프린트 (A4 1장/팔레트, 큰 글씨 레이아웃)
+  - **일괄 출력** → 전체 팔레트 쉬핑마크 한번에 인쇄
 
 - **테이블**: `shipment_pallets`, `shipment_pallet_items`, `inventory_lots`, `products`, `documents`
 
@@ -315,7 +320,9 @@
   - 팔레트 번호 → 적재 품목/수량/lot/유통기한
   - 팔레트 CBM, 팔레트 중량
   - 패킹 사진 썸네일 (있으면)
-- PDF 생성 → `documents`(owner_type=shipment, type=packing_list)
+- **📥 다운로드**:
+  - **PDF** 생성 → `documents`(owner_type=shipment, type=packing_list)
+  - **엑셀(xlsx) 다운로드** — 행선지별/팔레트별 시트 분리, 소계 포함
 - **테이블**: `shipment_pallets`, `shipment_pallet_items`, `documents`
 
 ### 26. 서류 관리 `/logistics/shipments/:id/documents`
