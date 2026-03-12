@@ -29,3 +29,15 @@
 - docs/ 관리 지침 수립 (CONTRIBUTING.md)
 - 마이그레이션 넘버링 규칙 확정
 - CHANGELOG 운영 시작
+
+### DDL 작성 (Codex)
+- 17 테이블 전체 DDL 완성 (supabase/migrations/20260312_000001_trade_intel_mvp.sql)
+- updated_at 트리거 전 테이블 적용
+- 인덱스, 제약조건, UNIQUE 설정 완료
+- fd 스킬 (Claude-first UI 릴레이) 추가
+
+### PRD 작성
+- docs/PRD.md v1.0 작성
+- 기능 요구사항 FR 코드 부여 (CAT/ORD/VND/SAL/INV/COM/SHP/PLT/PKL/DOC/INQ/ADM)
+- MVP 1차(19p) / 2차(+16p) / Phase 2(Sales Board) 범위 확정
+- 마일스톤 M0~M8 정의
