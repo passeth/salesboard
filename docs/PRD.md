@@ -185,9 +185,11 @@ draft → submitted → vendor_review → sales_review
 **FR-SHP-03**: 출고지별 분류
 
 **FR-PLT-01**: 팔레트 생성 + 적재 시뮬레이션
-  - 카툰 사이즈(case_length × case_width × case_height) 기반
-  - 팔레트 규격 선택 → 적재 배치 (2D 뷰)
-  - CBM, 총중량 자동 계산
+  - **기본 팔레트 규격: 1100mm × 1100mm** (커스텀 변경 가능)
+  - **높이만 입력 → 팔레트 CBM 자동 계산**: `pallet_cbm = W × D × H(m)`
+  - 카툰 사이즈(case_length × case_width × case_height) 기반 박스 CBM도 동시 표시
+  - **최종 CBM = 팔레트 CBM** (실제 선적 기준), 박스 CBM은 참고용
+  - 총중량 자동 계산
 
 **FR-PLT-02**: lot 매칭 + 유통기한
   - inventory_lots → shipment_pallet_items 자동 매칭 (FIFO)
@@ -198,6 +200,26 @@ draft → submitted → vendor_review → sales_review
   - 팔레트별 shipping_mark (바이어 정보 + 유통기한 + 로트)
   - earliest/latest_expiry_date 자동 집계
   - PDF 생성
+
+**FR-PLT-04**: 📸 패킹 완료 사진 업로드
+  - 팔레트별 다중 이미지 업로드 (전/후 태그)
+  - documents(owner_type=shipment_pallet, type=packing_photo) 저장
+  - 바이어/벤더 공유 옵션
+
+**FR-PLT-05**: 📦 비완박스(낱개) 출고 처리
+  - `is_partial_case: true` → 박스 해체 출고 건 표시
+  - 낱개 수량 직접 입력 (packed_unit_qty 수동)
+  - 낱개 CBM 자동 보정: `unit_cbm = case_cbm / units_per_case × qty`
+  - 사유 입력 필수 (partial_reason)
+  - 패킹 요약에 비완박스 건 별도 표시
+
+**FR-PKL-01**: 패킹리스트 실수량 표시
+  - 총수량(pcs), 총박스(cases), 총금액 = 실제 출고분 기준 (0 표시 방지)
+  - 비완박스 건은 별도 행
+
+**FR-PKL-02**: 행선지별 + 팔레트별 요약
+  - destination_org_id 기준 행선지 그룹핑 (소계 포함)
+  - 팔레트별 품목/수량/CBM/중량 + 패킹 사진 썸네일
 
 **FR-PKL-01**: 패킹리스트 자동 생성
   - 팔레트별 품목/수량/lot/유통기한 집계

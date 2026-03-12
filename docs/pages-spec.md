@@ -258,17 +258,41 @@
 **물류 핵심 기능.**
 
 - **팔레트 생성**: `pallet_no` 채번, 팔레트 규격 선택
+  - **기본 팔레트 규격: 1100mm × 1100mm** (표준)
+  - 팔레트별 **적재 높이(mm)만 입력** → 팔레트 CBM 자동 계산
+  - `pallet_cbm = 1.1 × 1.1 × (height_mm / 1000)`
+  - 커스텀 팔레트 규격 지원 (W × D 변경 가능)
+
+- **📦 CBM 이중 표시** (박스 기준 vs 팔레트 기준):
+  - **박스 CBM**: 개별 박스 사이즈 기반 (기존)
+  - **팔레트 CBM**: 실제 적재 높이 기반 (현장 실측)
+  - ⚠️ 두 값 차이 10% 이상이면 경고 표시
+  - **최종 CBM = 팔레트 CBM** (실제 선적 기준)
+
 - **적재 시뮬레이션**:
   - 제품별 `case_length × case_width × case_height` 로드
   - 팔레트 규격 대비 적재 배치 (2D 뷰 / 향후 3D)
   - `simulation_json`에 결과 저장
-  - CBM, 총중량 자동 계산 (`cbm`, `gross_weight`, `net_weight`)
+  - 총중량 자동 계산 (`gross_weight`, `net_weight`)
+
+- **📸 패킹 완료 사진 업로드**:
+  - 팔레트별 사진 촬영 후 업로드 (다중 이미지)
+  - 패킹 전/후 사진 구분 태그
+  - `documents`(owner_type=shipment_pallet, type=packing_photo)에 저장
+  - 바이어/벤더에게 사진 공유 가능 (선택)
 
 - **lot 매칭 + 유통기한**:
   - `inventory_lots` → `shipment_pallet_items` 자동 매칭 (FIFO)
   - `expiry_date_snapshot` 기록
   - 전산재고 불확실(`confidence_status: low`) → `manual_override: true`, `override_reason` 입력
   - `packed_case_qty`, `packed_unit_qty` 입력
+
+- **📦 낱개(비완박스) 처리**:
+  - `is_partial_case: true` 플래그 → 박스 해체 출고 건
+  - 낱개 수량 직접 입력 (`packed_unit_qty` 수동, `packed_case_qty = 0`)
+  - **낱개 CBM 자동 보정**: `unit_cbm = case_cbm / units_per_case × packed_unit_qty`
+  - 패킹 요약에 "⚠️ 비완박스 포함" 표시
+  - 사유 입력 필수 (`partial_reason`)
 
 - **쉬핑마크 자동 발급**:
   - 팔레트별 `shipping_mark` 생성 (바이어 정보 + 유통기한 + 로트)
@@ -278,19 +302,35 @@
 - **테이블**: `shipment_pallets`, `shipment_pallet_items`, `inventory_lots`, `products`, `documents`
 
 ### 25. 패킹리스트 `/logistics/shipments/:id/packing-list`
-- 팔레트별 품목/수량/lot/유통기한 자동 집계
-- 출고지별 분류
+- **📊 패킹 요약 — 실수량 표시** (0 표시 방지):
+  - 총수량(pcs): `Σ packed_unit_qty` (실제 출고 낱개)
+  - 총박스(cases): `Σ packed_case_qty` (완박스만)
+  - 총금액: `Σ (unit_price × packed_unit_qty)` (실제 출고분 기준)
+  - 비완박스 건은 별도 행으로 표시
+- **🗂️ 행선지별 요약**:
+  - `destination_org_id`(buyer_ship_to) 기준 그룹핑
+  - 행선지별 소계: 수량, 박스, CBM, 금액
+  - 행선지별 팔레트 목록
+- **🔲 팔레트별 요약**:
+  - 팔레트 번호 → 적재 품목/수량/lot/유통기한
+  - 팔레트 CBM, 팔레트 중량
+  - 패킹 사진 썸네일 (있으면)
 - PDF 생성 → `documents`(owner_type=shipment, type=packing_list)
 - **테이블**: `shipment_pallets`, `shipment_pallet_items`, `documents`
 
 ### 26. 서류 관리 `/logistics/shipments/:id/documents`
-- 원산지 증명서(COO) 발급/업로드
-- B/L 업로드
-- 통관 서류 업로드
-- 포워더 발급 서류 보관
-- 트래킹 문서 업데이트
+- **📄 서류 유형별 업로드/관리**:
+  - ✅ 원산지 증명서(COO) — 발급/업로드
+  - ✅ B/L (선하증권) — 업로드
+  - ✅ 인보이스 — 연결 (§20에서 생성된 건)
+  - ✅ 패킹리스트 — 자동 생성 (§25)
+  - ✅ 통관 서류 — 업로드
+  - ✅ 포워더 발급 서류 — 업로드
+  - ✅ 트래킹 문서 — 업데이트
+  - ✅ 패킹 사진 — 팔레트별 (§24에서 업로드된 건)
 - 모든 서류 → `documents`(owner_type=shipment)
 - 버전 관리 (`version_no`)
+- **바이어 공유 토글**: 서류별 바이어 열람 허용 여부 (`is_buyer_visible`)
 - **테이블**: `documents`
 
 ---
@@ -326,6 +366,13 @@
 
 ### 31. 제품 관리 `/admin/products`
 - 제품 CRUD (마스터 + 물류 규격)
+- **📦 패킹 규격 관리** (신제품 등록/기존 제품 업데이트):
+  - 입수량 (`units_per_case`)
+  - 박스 사이즈 (`case_length × case_width × case_height` mm)
+  - 박스 CBM (자동 계산 또는 수동 입력)
+  - 순중량 (`net_weight`), 총중량 (`gross_weight`)
+  - 바코드 (`barcode`), HS코드 (`hs_code`)
+  - ⚠️ 필수 물류 규격 미입력 제품 → 경고 배지 (발주/패킹 시 문제 발생)
 - 국가별 콘텐츠 관리 (`product_market_contents`)
 - 제품 문서/이미지 업로드 (`documents`)
 - `extra_json` 활용한 추가 속성
