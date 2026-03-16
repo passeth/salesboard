@@ -1,0 +1,101 @@
+{
+  "$schema": "./table-schemas.schema.json",
+  "_meta": {
+    "description": "페이지별 테이블 컬럼 스키마 — 컬럼 순서, 너비, 정렬, 포맷을 한 곳에서 관리",
+    "lastSync": "2026-03-13"
+  },
+
+  "salesOrders": {
+    "label": "Sales Orders",
+    "page": "/sales/orders",
+    "defaultSort": { "key": "created_at", "direction": "desc" },
+    "pageSize": 20,
+    "columns": [
+      { "key": "order_no",               "header": "Order No",           "width": 140,  "align": "left",   "type": "link",     "sortable": true },
+      { "key": "buyer",                  "header": "Buyer",              "width": "1fr", "align": "left",   "type": "text",     "sortable": true },
+      { "key": "status",                 "header": "Status",             "width": 130,  "align": "left",   "type": "badge",    "sortable": true,  "colorMap": "status" },
+      { "key": "items_count",            "header": "Items",              "width": 80,   "align": "center", "type": "number",   "sortable": false },
+      { "key": "requested_delivery_date","header": "Requested Delivery", "width": 150,  "align": "left",   "type": "date",     "sortable": true,  "format": "MMM d, yyyy" },
+      { "key": "submitted_at",           "header": "Submitted",          "width": 130,  "align": "left",   "type": "date",     "sortable": true,  "format": "MMM d" },
+      { "key": "created_at",             "header": "Created",            "width": 130,  "align": "left",   "type": "date",     "sortable": true,  "format": "MMM d" }
+    ]
+  },
+
+  "buyerOrders": {
+    "label": "My Orders",
+    "page": "/buyer/orders",
+    "defaultSort": { "key": "created_at", "direction": "desc" },
+    "pageSize": 20,
+    "columns": [
+      { "key": "order_no",               "header": "Order No",           "width": 140,  "align": "left",   "type": "link",     "sortable": true },
+      { "key": "status",                 "header": "Status",             "width": 130,  "align": "left",   "type": "badge",    "sortable": true,  "colorMap": "status" },
+      { "key": "organization",           "header": "Organization",       "width": "1fr", "align": "left",   "type": "text",     "sortable": false },
+      { "key": "currency_code",          "header": "Currency",           "width": 90,   "align": "center", "type": "text",     "sortable": false },
+      { "key": "requested_delivery_date","header": "Requested Delivery", "width": 150,  "align": "left",   "type": "date",     "sortable": true,  "format": "MMM d, yyyy" },
+      { "key": "submitted_at",           "header": "Submitted",          "width": 130,  "align": "left",   "type": "date",     "sortable": true,  "format": "MMM d" },
+      { "key": "created_at",             "header": "Created",            "width": 130,  "align": "left",   "type": "date",     "sortable": true,  "format": "MMM d" }
+    ]
+  },
+
+  "products": {
+    "label": "Products",
+    "page": "/admin/products",
+    "defaultSort": { "key": "name", "direction": "asc" },
+    "pageSize": 20,
+    "columns": [
+      { "key": "image",           "header": "Image",       "width": 60,    "align": "center", "type": "image",   "sortable": false },
+      { "key": "name",            "header": "Name",        "width": "1fr", "align": "left",   "type": "text",    "sortable": true },
+      { "key": "sku",             "header": "SKU",         "width": 120,   "align": "left",   "type": "mono",    "sortable": true },
+      { "key": "brand",           "header": "Brand",       "width": 120,   "align": "left",   "type": "text",    "sortable": true },
+      { "key": "category",        "header": "Category",    "width": 120,   "align": "left",   "type": "text",    "sortable": true },
+      { "key": "units_per_case",  "header": "Units/Case",  "width": 100,   "align": "center", "type": "number",  "sortable": true },
+      { "key": "cbm",             "header": "CBM",         "width": 80,    "align": "right",  "type": "decimal", "sortable": true,  "precision": 4 },
+      { "key": "barcode",         "header": "Barcode",     "width": 130,   "align": "left",   "type": "mono",    "sortable": false },
+      { "key": "status",          "header": "Status",      "width": 100,   "align": "left",   "type": "badge",   "sortable": true,  "colorMap": "productStatus" }
+    ]
+  },
+
+  "users": {
+    "label": "Users",
+    "page": "/admin/users",
+    "defaultSort": { "key": "created_at", "direction": "desc" },
+    "pageSize": 20,
+    "columns": [
+      { "key": "name",           "header": "Name",          "width": "1fr", "align": "left",   "type": "text",   "sortable": true },
+      { "key": "email",          "header": "Email",         "width": "1fr", "align": "left",   "type": "text",   "sortable": true },
+      { "key": "role",           "header": "Role",          "width": 120,   "align": "left",   "type": "badge",  "sortable": true,  "colorMap": "role" },
+      { "key": "organization",   "header": "Organization",  "width": "1fr", "align": "left",   "type": "text",   "sortable": false },
+      { "key": "status",         "header": "Status",        "width": 100,   "align": "left",   "type": "badge",  "sortable": true,  "colorMap": "userStatus" },
+      { "key": "created_at",     "header": "Created",       "width": 130,   "align": "left",   "type": "date",   "sortable": true,  "format": "MMM d" }
+    ]
+  },
+
+  "shipments": {
+    "label": "Shipments",
+    "page": "/logistics/shipments",
+    "defaultSort": { "key": "created_at", "direction": "desc" },
+    "pageSize": 20,
+    "columns": [
+      { "key": "shipment_no",  "header": "Shipment No",  "width": 140,   "align": "left",   "type": "link",   "sortable": true },
+      { "key": "order_no",     "header": "Order No",     "width": 130,   "align": "left",   "type": "link",   "sortable": false },
+      { "key": "buyer",        "header": "Buyer",        "width": "1fr", "align": "left",   "type": "text",   "sortable": false },
+      { "key": "status",       "header": "Status",       "width": 130,   "align": "left",   "type": "badge",  "sortable": true,  "colorMap": "shipmentStatus" },
+      { "key": "carrier",      "header": "Carrier",      "width": 120,   "align": "left",   "type": "text",   "sortable": true },
+      { "key": "etd",          "header": "ETD",          "width": 120,   "align": "left",   "type": "date",   "sortable": true,  "format": "MMM d" },
+      { "key": "eta",          "header": "ETA",          "width": 120,   "align": "left",   "type": "date",   "sortable": true,  "format": "MMM d" },
+      { "key": "tracking_no",  "header": "Tracking No",  "width": 160,   "align": "left",   "type": "mono",   "sortable": false },
+      { "key": "created_at",   "header": "Created",      "width": 130,   "align": "left",   "type": "date",   "sortable": true,  "format": "MMM d" }
+    ]
+  },
+
+  "_columnTypes": {
+    "text":    { "fontFamily": "secondary", "fontWeight": "normal" },
+    "link":    { "fontFamily": "secondary", "fontWeight": "500", "color": "primary" },
+    "mono":    { "fontFamily": "mono",      "fontWeight": "normal", "fontSize": 13 },
+    "number":  { "fontFamily": "secondary", "fontWeight": "500",    "tabularNums": true },
+    "decimal": { "fontFamily": "secondary", "fontWeight": "500",    "tabularNums": true },
+    "date":    { "fontFamily": "secondary", "fontWeight": "normal", "color": "muted-foreground" },
+    "badge":   { "component": "Badge" },
+    "image":   { "component": "Avatar", "size": "sm" }
+  }
+}

@@ -5,26 +5,39 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "tokens": "npx tsx src/design-tokens/generate-css.ts",
+    "figma:sync": "npx tsx src/design-tokens/figma-sync.ts",
+    "figma:guide": "npx tsx src/design-tokens/figma-push.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.1",
     "@tailwindcss/postcss": "^4.1.0",
+    "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.511.0",
     "next": "^15.2.0",
     "postcss": "^8.5.3",
+    "radix-ui": "^1.4.3",
     "react": "^19.0.0",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.71.2",
     "tailwind-merge": "^3.3.0",
-    "tailwindcss": "^4.1.0"
+    "tailwindcss": "^4.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "25.5.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "agentation": "^2.3.3",
+    "csv-parse": "^6.1.0",
+    "postgres": "^3.4.8",
     "typescript": "^5.8.2"
   }
 }

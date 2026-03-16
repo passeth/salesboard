@@ -1,7 +1,14 @@
+/* ============================================================
+ * 🚨 AUTO-GENERATED — DO NOT EDIT MANUALLY
+ * Source: src/design-tokens/tokens.json (synced from Figma Variables)
+ * Regenerate: npx tsx src/design-tokens/generate-css.ts
+ * ============================================================ */
+
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-primary);
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -42,123 +49,346 @@
   --color-status-completed: hsl(var(--status-completed));
   --color-status-cancelled: hsl(var(--status-cancelled));
 
+  --color-success: hsl(var(--color-success));
+  --color-success-foreground: hsl(var(--color-success-foreground));
+  --color-warning: hsl(var(--color-warning));
+  --color-warning-foreground: hsl(var(--color-warning-foreground));
+  --color-error: hsl(var(--color-error));
+  --color-error-foreground: hsl(var(--color-error-foreground));
+  --color-info: hsl(var(--color-info));
+  --color-info-foreground: hsl(var(--color-info-foreground));
+
   --color-sidebar-background: hsl(var(--sidebar-background));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-accent));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-muted));
+  --color-sidebar-ring: hsl(var(--sidebar-accent));
 
   --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
 }
 
-:root {
-  --background: 240 14% 98%;
-  --foreground: 242 91% 9%;
-  --card: 0 0% 100%;
-  --card-foreground: 242 91% 9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 242 91% 9%;
+@layer base {
+  :root {
+    --primary: 242 100% 68%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 249 77% 93%;
+    --secondary-foreground: 242 100% 68%;
+    --destructive: 355 78% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --accent: 249 77% 93%;
+    --accent-foreground: 242 100% 68%;
+    --muted: 240 7% 97%;
+    --muted-foreground: 240 7% 53%;
+    --background: 240 11% 98%;
+    --foreground: 242 91% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 242 91% 8%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 242 100% 68%;
+    --color-success: 132 44% 41%;
+    --color-success-foreground: 0 0% 100%;
+    --color-success-bg: #E8F5E9;
+    --color-warning: 29 88% 59%;
+    --color-warning-foreground: 0 0% 100%;
+    --color-warning-bg: #FFF3E0;
+    --color-error: 355 78% 46%;
+    --color-error-foreground: 0 0% 100%;
+    --color-error-bg: #FDECEA;
+    --color-info: 191 77% 52%;
+    --color-info-foreground: 0 0% 100%;
+    --color-info-bg: #E0F7FA;
+    --sidebar-background: 242 91% 8%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-accent: 242 100% 68%;
+    --sidebar-muted: 241 45% 18%;
+    --sidebar-inactive: 240 9% 66%;
+    --status-draft: 215 20% 65%;
+    --status-submitted: 242 100% 68%;
+    --status-vendor-review: 258 90% 66%;
+    --status-sales-review: 242 100% 68%;
+    --status-needs-decision: 29 88% 59%;
+    --status-confirmed: 132 44% 41%;
+    --status-rejected: 355 78% 46%;
+    --status-invoiced: 192 91% 36%;
+    --status-partially-shipped: 38 92% 50%;
+    --status-shipped: 221 83% 53%;
+    --status-completed: 142 76% 36%;
+    --status-cancelled: 220 9% 46%;
 
-  --primary: 242 100% 68%;
-  --primary-foreground: 0 0% 100%;
+    /* Radius */
+    --radius-none: 0px;
+    --radius-s: 5px;
+    --radius-m: 10px;
+    --radius-l: 12px;
+    --radius-pill: 20px;
+    --radius: 10px;
 
-  --secondary: 240 7% 97%;
-  --secondary-foreground: 242 91% 9%;
+    /* Typography */
+    --font-primary: "Inter", system-ui, sans-serif;
+    --font-secondary: "Inter", system-ui, sans-serif;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-size-xs: 12px;
+    --font-size-sm: 13px;
+    --font-size-base: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 24px;
+    --font-size-3xl: 28px;
+    --font-size-4xl: 36px;
 
-  --muted: 240 7% 97%;
-  --muted-foreground: 220 9% 46%;
+    /* Spacing */
+    --spacing-0: 0px;
+    --spacing-1: 4px;
+    --spacing-2: 6px;
+    --spacing-3: 8px;
+    --spacing-4: 10px;
+    --spacing-5: 12px;
+    --spacing-6: 16px;
+    --spacing-8: 20px;
+    --spacing-10: 24px;
+    --spacing-12: 32px;
+    --spacing-16: 64px;
 
-  --accent: 246 79% 93%;
-  --accent-foreground: 242 100% 68%;
+    /* Button sizes */
+    --btn-sm-h: 32px;
+    --btn-sm-px: 12px;
+    --btn-sm-py: 6px;
+    --btn-sm-font: 12px;
+    --btn-md-h: 40px;
+    --btn-md-px: 20px;
+    --btn-md-py: 10px;
+    --btn-md-font: 14px;
+    --btn-lg-h: 48px;
+    --btn-lg-px: 24px;
+    --btn-lg-py: 12px;
+    --btn-lg-font: 16px;
+    --btn-icon-h: 40px;
+    --btn-icon-px: 0px;
+    --btn-icon-py: 0px;
 
-  --destructive: 355 78% 46%;
-  --destructive-foreground: 0 0% 100%;
+    /* Toggle sizes */
+    --toggle-sm-w: 36px;
+    --toggle-sm-h: 20px;
+    --toggle-sm-thumb: 16px;
+    --toggle-md-w: 44px;
+    --toggle-md-h: 24px;
+    --toggle-md-thumb: 20px;
+    --toggle-lg-w: 52px;
+    --toggle-lg-h: 28px;
+    --toggle-lg-thumb: 24px;
 
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --ring: 242 100% 68%;
+    /* Input sizes */
+    --input-sm-h: 32px;
+    --input-sm-px: 8px;
+    --input-sm-font: 12px;
+    --input-md-h: 40px;
+    --input-md-px: 12px;
+    --input-md-font: 14px;
+    --input-lg-h: 48px;
+    --input-lg-px: 16px;
+    --input-lg-font: 16px;
 
-  --chart-1: 218 100% 68%;
-  --chart-2: 242 100% 68%;
-  --chart-3: 44 100% 71%;
-  --chart-4: 16 100% 71%;
-  --chart-5: 191 76% 52%;
+    /* Chart */
+    --chart-1: 242 100% 68%;
+    --chart-2: 132 44% 41%;
+    --chart-3: 29 88% 59%;
+    --chart-4: 191 77% 52%;
+    --chart-5: 355 78% 46%;
 
-  --status-draft: 220 9% 65%;
-  --status-submitted: 217 91% 60%;
-  --status-vendor-review: 262 83% 58%;
-  --status-sales-review: 38 92% 50%;
-  --status-needs-decision: 24 95% 53%;
-  --status-confirmed: 160 84% 39%;
-  --status-rejected: 0 84% 60%;
-  --status-invoiced: 239 84% 67%;
-  --status-partially-shipped: 173 80% 40%;
-  --status-shipped: 160 95% 30%;
-  --status-completed: 160 95% 24%;
-  --status-cancelled: 220 9% 46%;
+    /* Component tokens */
+    --component-button-sm-height: 32px;
+    --component-button-sm-padding-y: 6px;
+    --component-button-sm-padding-x: 12px;
+    --component-button-sm-gap: 6px;
+    --component-button-sm-icon-size: 14px;
+    --component-button-sm-font-size: 12px;
+    --component-button-md-height: 40px;
+    --component-button-md-padding-y: 10px;
+    --component-button-md-padding-x: 20px;
+    --component-button-md-gap: 8px;
+    --component-button-md-icon-size: 16px;
+    --component-button-md-font-size: 14px;
+    --component-button-lg-height: 48px;
+    --component-button-lg-padding-y: 12px;
+    --component-button-lg-padding-x: 24px;
+    --component-button-lg-gap: 8px;
+    --component-button-lg-icon-size: 18px;
+    --component-button-lg-font-size: 16px;
+    --component-button-icon-height: 40px;
+    --component-button-icon-width: 40px;
+    --component-button-icon-padding-y: 0px;
+    --component-button-icon-padding-x: 0px;
+    --component-button-icon-icon-size: 18px;
+    --component-toggle-sm-width: 36px;
+    --component-toggle-sm-height: 20px;
+    --component-toggle-sm-thumb-size: 16px;
+    --component-toggle-md-width: 44px;
+    --component-toggle-md-height: 24px;
+    --component-toggle-md-thumb-size: 20px;
+    --component-toggle-lg-width: 52px;
+    --component-toggle-lg-height: 28px;
+    --component-toggle-lg-thumb-size: 24px;
+    --component-input-sm-height: 32px;
+    --component-input-sm-padding-y: 0px;
+    --component-input-sm-padding-x: 8px;
+    --component-input-sm-font-size: 12px;
+    --component-input-sm-label-gap: 4px;
+    --component-input-md-height: 40px;
+    --component-input-md-padding-y: 0px;
+    --component-input-md-padding-x: 12px;
+    --component-input-md-font-size: 14px;
+    --component-input-md-label-gap: 6px;
+    --component-input-lg-height: 48px;
+    --component-input-lg-padding-y: 0px;
+    --component-input-lg-padding-x: 16px;
+    --component-input-lg-font-size: 16px;
+    --component-input-lg-label-gap: 8px;
+    --component-input-gap: 8px;
+    --component-badge-sm-padding-y: 2px;
+    --component-badge-sm-padding-x: 6px;
+    --component-badge-sm-font-size: 10px;
+    --component-badge-md-padding-y: 4px;
+    --component-badge-md-padding-x: 10px;
+    --component-badge-md-font-size: 12px;
+    --component-badge-lg-padding-y: 6px;
+    --component-badge-lg-padding-x: 14px;
+    --component-badge-lg-font-size: 14px;
+    --component-badge-gap: 4px;
+    --component-card-header-padding-y: 20px;
+    --component-card-header-padding-x: 24px;
+    --component-card-content-padding-top: 0px;
+    --component-card-content-padding-right: 24px;
+    --component-card-content-padding-bottom: 20px;
+    --component-card-content-padding-left: 24px;
+    --component-card-gap: 4px;
+    --component-table-header-height: 44px;
+    --component-table-row-height: 52px;
+    --component-table-cell-padding-y: 0px;
+    --component-table-cell-padding-x: 8px;
+    --component-sidebar-width: 240px;
+    --component-sidebar-item-padding-y: 10px;
+    --component-sidebar-item-padding-x: 16px;
+    --component-sidebar-item-gap: 12px;
+    --component-sidebar-container-padding-y: 24px;
+    --component-sidebar-container-padding-x: 16px;
+    --component-header-bar-height: 64px;
+    --component-header-bar-padding-y: 0px;
+    --component-header-bar-padding-x: 32px;
+    --component-header-bar-avatar-size: 36px;
+    --component-select-height: 40px;
+    --component-select-padding-y: 0px;
+    --component-select-padding-x: 12px;
+    --component-select-option-height: 36px;
+    --component-select-font-size: 14px;
+    --component-select-label-gap: 6px;
+    --component-tabs-padding-y: 10px;
+    --component-tabs-padding-x: 16px;
+    --component-tabs-font-size: 14px;
+    --component-tabs-border-width: 2px;
+    --component-tabs-gap: 0px;
+    --component-modal-sm-width: 400px;
+    --component-modal-md-width: 480px;
+    --component-modal-lg-width: 640px;
+    --component-modal-header-padding-top: 24px;
+    --component-modal-header-padding-right: 24px;
+    --component-modal-header-padding-bottom: 0px;
+    --component-modal-header-padding-left: 24px;
+    --component-modal-body-padding-y: 16px;
+    --component-modal-body-padding-x: 24px;
+    --component-modal-footer-padding-top: 0px;
+    --component-modal-footer-padding-right: 24px;
+    --component-modal-footer-padding-bottom: 24px;
+    --component-modal-footer-padding-left: 24px;
+    --component-modal-gap: 8px;
+    --component-modal-title-size: 18px;
+    --component-modal-close-size: 20px;
+    --component-avatar-sm-size: 28px;
+    --component-avatar-sm-font-size: 11px;
+    --component-avatar-md-size: 36px;
+    --component-avatar-md-font-size: 14px;
+    --component-avatar-lg-size: 48px;
+    --component-avatar-lg-font-size: 18px;
+    --component-toast-width: 360px;
+    --component-toast-padding-y: 16px;
+    --component-toast-padding-x: 16px;
+    --component-toast-gap: 12px;
+    --component-toast-title-size: 14px;
+    --component-toast-desc-size: 13px;
+    --component-toast-icon-size: 20px;
+    --component-toast-close-size: 16px;
+    --component-tooltip-padding-y: 6px;
+    --component-tooltip-padding-x: 10px;
+    --component-tooltip-font-size: 12px;
+    --component-pagination-item-size: 32px;
+    --component-pagination-gap: 4px;
+    --component-pagination-font-size: 13px;
+    --component-pagination-icon-size: 16px;
+    --component-checkbox-size: 18px;
+    --component-checkbox-check-size: 12px;
+    --component-checkbox-border-width: 1.5px;
+    --component-spinner-sm-size: 16px;
+    --component-spinner-sm-stroke-width: 2px;
+    --component-spinner-md-size: 24px;
+    --component-spinner-md-stroke-width: 2px;
+    --component-spinner-lg-size: 36px;
+    --component-spinner-lg-stroke-width: 3px;
+    --component-empty-state-icon-size: 48px;
+    --component-empty-state-title-size: 16px;
+    --component-empty-state-desc-size: 14px;
+    --component-empty-state-padding-y: 40px;
+    --component-empty-state-padding-x: 24px;
+    --component-empty-state-gap: 12px;
+    --component-divider-thickness: 1px;
 
-  --sidebar-background: 0 0% 100%;
-  --sidebar-foreground: 242 91% 9%;
-  --sidebar-primary: 242 100% 68%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 246 79% 93%;
-  --sidebar-accent-foreground: 242 100% 68%;
-  --sidebar-border: 220 14% 96%;
-  --sidebar-ring: 242 100% 68%;
+    /* Popover (= Card) */
+    --popover: var(--card);
+    --popover-foreground: var(--card-foreground);
+  }
 
-  --radius: 0.625rem;
+  .dark {
+    --background: 240 87% 6%;
+    --foreground: 0 0% 98%;
+    --card: 240 60% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 60% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 242 100% 68%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 243 30% 20%;
+    --secondary-foreground: 242 100% 68%;
+    --muted: 240 30% 15%;
+    --muted-foreground: 240 10% 60%;
+    --accent: 243 30% 20%;
+    --accent-foreground: 242 100% 68%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 20% 20%;
+    --input: 240 20% 20%;
+    --ring: 242 100% 68%;
+
+    --sidebar-background: 240 87% 4%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-accent: 242 100% 68%;
+    --sidebar-muted: 240 40% 12%;
+  }
 }
 
-.dark {
-  --background: 242 45% 10%;
-  --foreground: 240 14% 98%;
-  --card: 242 35% 14%;
-  --card-foreground: 240 14% 98%;
-  --popover: 242 35% 14%;
-  --popover-foreground: 240 14% 98%;
-
-  --primary: 242 100% 76%;
-  --primary-foreground: 242 45% 10%;
-
-  --secondary: 242 24% 18%;
-  --secondary-foreground: 240 14% 98%;
-
-  --muted: 242 24% 18%;
-  --muted-foreground: 240 6% 66%;
-
-  --accent: 242 33% 22%;
-  --accent-foreground: 240 14% 98%;
-
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-
-  --border: 242 20% 28%;
-  --input: 242 20% 28%;
-  --ring: 242 100% 76%;
-
-  --sidebar-background: 242 35% 12%;
-  --sidebar-foreground: 240 14% 98%;
-  --sidebar-primary: 242 100% 76%;
-  --sidebar-primary-foreground: 242 45% 10%;
-  --sidebar-accent: 242 33% 22%;
-  --sidebar-accent-foreground: 240 14% 98%;
-  --sidebar-border: 242 20% 24%;
-  --sidebar-ring: 242 100% 76%;
-}
-
-* {
-  border-color: hsl(var(--border));
-}
-
-body {
-  min-height: 100vh;
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: var(--font-sans);
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-primary);
+  }
 }

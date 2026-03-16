@@ -5,6 +5,172 @@
 
 ---
 
+## 2026-03-13 — 남은 페이지 구현 + 테스트 계정 추가
+
+### 신규 페이지 (3개)
+- `/admin/organizations` — 조직 관리 (계층 트리 테이블, org_type/status/search 필터, 페이지네이션, 타입별 컬러 Badge)
+- `/admin/orders` — 전체 주문 관리 (모든 바이어 주문 조회, status/buyer/date/search 필터, 행 클릭 → sales order detail)
+- `/profile` — 프로필 편집 (이름/전화/locale 수정, 비밀번호 변경, 서버 액션 기반)
+
+### 쿼리 헬퍼 추가
+- `getAdminOrganizations` — org_type/status/search 필터, parent org join, 페이지네이션
+- `getAdminOrders` — status/orgId/fromDate/toDate/search 필터, org+sales_owner join
+- `getAdminOrderFilterOptions` — 주문이 있는 바이어 조직 목록
+
+### 사이드바 업데이트
+- Admin 섹션에 Organizations, All Orders 링크 추가
+
+### 테스트 계정 추가
+- Sales: `sales@evas.co.kr` / `sales1234!` (UUID: da59c58b-2f8c-47fd-a640-76e1b83f8ff5)
+- Logistics: `logistics@evas.co.kr` / `logistics1234!` (UUID: 9a030036-2020-4cee-9543-f83b143bd517)
+
+### 버그 수정
+- `BuyerOrgSelector`에서 제거된 `currentOrgName` prop 정리 (buyer/page.tsx, buyer/orders/page.tsx)
+- `.next` 캐시 corruption으로 인한 서버 사이드 오류 해결
+
+### Build 결과
+- 22 routes, `pnpm build` 통과
+- LSP diagnostics clean on all files
+- 결정자: passeth
+
+---
+
+## 2026-03-13 — Phase 3-5 구현 (Sales + Logistics + Admin)
+
+### Phase 3: Sales Core (13 files)
+- `/sales` — Sales Dashboard (stat cards: Pending Reviews, Awaiting Buyer Decision, Confirmed This Month)
+- `/sales/orders` — Order Review List (paginated table, status/buyer/date filters)
+- `/sales/orders/[id]` — Order Review Detail (inventory lot context, qty confirmation, allocation type, action buttons: Full Confirm / Request Buyer Decision)
+- Server actions: `salesConfirmOrder`, `salesRequestBuyerDecision`
+- Query helper: `src/lib/queries/sales-orders.ts` (getSalesOrders, getSalesOrderStats, getInventoryForProducts, getSalesBuyerOrganizations)
+
+### Phase 4: Logistics Core (12 files)
+- `/logistics` — Logistics Dashboard (stat cards: Awaiting Shipment, Active Shipments, Delivered This Month)
+- `/logistics/shipments` — Shipment List (paginated table, status/date filters, shipment status badges)
+- `/logistics/shipments/[id]` — Shipment Detail (header with status transitions, pallet management UI, pallet item display)
+- Server actions: `updateShipmentStatus` (with valid transition validation)
+- Query helper: `src/lib/queries/shipments.ts` (getShipments, getShipmentById, getShipmentPallets, getLogisticsStats)
+
+### Phase 5: Admin (8 files, replaced 3 placeholders)
+- `/admin` — Admin Dashboard (4 stat cards: Total Orders, Active Users, Products, Organizations + pipeline-by-status grid)
+- `/admin/users` — User Management (paginated table, role/status badges, org join, role/status filters)
+- `/admin/products` — Product Management (paginated table, image thumbnails, brand/category/status/search filters, row click to catalog detail)
+- Query helper: `src/lib/queries/admin.ts` (getAdminStats, getOrderPipeline, getAdminUsers, getAdminProducts)
+
+### Build 결과
+- 20 routes, `pnpm build` 통과
+- LSP diagnostics clean on all files
+- 결정자: passeth
+
+---
+
+## 2026-03-13 — Phase 2 구현 + QA (Buyer Core)
+
+### 구현 완료
+- `/catalog` — 카탈로그 (리스트뷰 기본, 100개/페이지, 테이블: Image/Product/SKU/Brand/Units per Case/Barcode/CBM/Volume)
+- `/catalog/[id]` — 제품 상세 (기본 정보, 물류 규격, 국가별 탭, Add to Order)
+- `/buyer` — 바이어 대시보드 (카드 링크)
+- `/buyer/orders` — 주문 목록 (20/페이지, 정렬/필터/페이지네이션)
+- `/buyer/order/new` — 발주 작성 (배송 정보, 제품 선택 다이얼로그, 박스/유닛 계산)
+- `/buyer/orders/[id]` — 주문 상세 (브레드크럼, 수량 비교 테이블, 타임라인, 바이어 의사결정, 인보이스/출하/서류 섹션, 재주문)
+
+### 공유 컴포넌트 (8개)
+- StatusBadge, OrderItemStatusBadge, BoxQuantityDisplay, EmptyState, PageHeader, DataTable, DataTablePagination, DataTableColumnHeader
+
+### 쿼리 헬퍼 (3개)
+- `src/lib/queries/products.ts`, `orders.ts`, `organizations.ts`
+
+### 인프라
+- shadcn/ui 23개 설치
+- Zod 검증: `src/lib/validations/order.ts`
+- 바이어 RLS 정책: `000005_buyer_rls_policies.sql`
+- Google OAuth 추가 (미등록 사용자 자동 차단)
+- Admin 계정 재생성 (Supabase Admin API, UUID: `1ffa6f06-...`)
+- Cloudflare R2 설정 (MVP에서는 Supabase image_url 사용, 향후 전환)
+- Playwright QA 전체 페이지 검증 통과
+- 결정자: passeth
+
+---
+
+## 2026-03-13 — Supabase DB 셋업 + 시드 데이터 임포트
+
+### 마이그레이션 적용 (4건)
+- `000001_trade_intel_mvp.sql` — 17 테이블 DDL (Supabase CLI `db push`)
+- `000002_trade_intel_rls_baseline.sql` — RLS 정책 + helper 함수 (Management API)
+- `000003_box_unit_ordering.sql` — 박스 단위 주문 컬럼 (수동 분할 적용: units_per_case 먼저, generated 컬럼 후)
+- `000004_pallet_enhancements.sql` — 팔레트 기능 강화
+
+### 시드 데이터 임포트
+| 테이블 | 목표 | 실제 | 비고 |
+|--------|------|------|------|
+| organizations | 83 | 83 | name_en → metadata_json |
+| products | 605 | 596 | 9건 CSV 중복 제외, name_en → extra_json |
+| orders | 2417 | 2417 | packing_no_legacy → metadata_json |
+| order_items | 29711 | 29711 | product_code → metadata_json |
+| inventory_lots | 468 | 347 | 121건 FK 위반 (product_id 미존재) |
+| product image_url | 596 | 430 | SKU 매칭 기준 UPDATE |
+
+### 시스템 사용자 생성
+- System Admin (admin@evas.co.kr, role=admin, org=EVAS)
+- UUID: `00000000-0000-0000-0000-000000000001`
+- orders.sales_owner_user_id FK 해결용
+
+### units_per_case 백필
+- 28740/29711 order_items에 products.units_per_case 스냅샷 복사
+
+### 인프라
+- Supabase MCP: remote(OAuth) → local(stdio+PAT)로 전환 (opencode OAuth 버그 #15546 우회)
+- Supabase CLI 프로젝트 연결 완료
+- 시드 스크립트: `scripts/seed.mjs` 생성
+
+### 알려진 이슈
+- inventory_lots 121건 누락: 시드 CSV의 product_id가 products 테이블에 없음 (데이터 품질 문제)
+- products 9건 누락: CSV 내 중복 ID
+- 결정자: passeth
+
+---
+
+## 2026-03-13 — Phase 1 구현 (로그인 + 역할 라우팅 + 대시보드 셸)
+
+### 구현 완료
+- Supabase Auth (서버/클라이언트/미들웨어 헬퍼)
+- 로그인 페이지 (split layout: 다크 브랜드 패널 + 폼 카드)
+- Auth 미들웨어 (역할별 라우트 보호: buyer→/buyer, vendor→/vendor 등)
+- PKCE 콜백 핸들러
+- 대시보드 레이아웃 (서버 컴포넌트, 사이드바 + 헤더 + 콘텐츠)
+- 사이드바 (다크 #030229, 역할별 네비게이션)
+- 헤더바 (sticky, 검색/알림/아바타)
+- Design tokens → globals.css (164 lines, Inter 폰트, Primary #605BFF)
+
+### 파일 목록 (13개)
+- `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/(auth)/login/page.tsx`
+- `src/app/(dashboard)/layout.tsx`, `src/app/auth/callback/route.ts`
+- `src/middleware.ts`, `src/components/sidebar.tsx`, `src/components/header-bar.tsx`
+- `src/lib/supabase/server.ts`, `src/lib/supabase/client.ts`, `src/lib/supabase/middleware.ts`
+- `src/lib/utils.ts`, `src/types/index.ts`
+- 결정자: passeth
+
+---
+
+## 2026-03-13 — Figma 분석 + Pencil 와이어프레임 + Next.js 프로젝트 초기화
+
+### Figma 디자인 분석
+- SAAS Dashboard Community 파일 (24프레임) 분석
+- 디자인 토큰 50+ 추출 (컬러, 타이포, 라디우스, 그림자)
+- 사이드바 2종 (Expanded 218px / Collapsed 80px)
+
+### Pencil 와이어프레임
+- 14개 재사용 컴포넌트 (Button×4, Input, Card, Badge×4, Sidebar, Header, Table)
+- 로그인 화면 + Sales Dashboard 화면 완성
+- trade.pen에 디자인 변수 설정
+
+### Next.js 프로젝트 초기화
+- Next.js 15 + React 19 + shadcn/ui + Tailwind v4
+- `pnpm build` 통과 확인
+- 결정자: passeth
+
+---
+
 ## 2026-03-13 — 다운로드/출력 기능 추가
 
 ### 인보이스·패킹리스트·쉬핑마크 출력 체계

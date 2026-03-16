@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    PUBLIC_PATHS.has(pathname) ||
+    pathname === "/auth/callback" ||
     isStaticAsset(pathname)
   ) {
     return NextResponse.next();
@@ -56,7 +56,22 @@ export async function middleware(request: NextRequest) {
   const { supabase, response, user } = await updateSession(request);
 
   if (!user) {
+    if (pathname === "/login") return NextResponse.next();
     return redirectTo(request, "/login");
+  }
+
+  if (pathname === "/login") {
+    const { data: loginUserRecord } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const loginRole = loginUserRecord?.role;
+    if (loginRole && isUserRole(loginRole)) {
+      return redirectTo(request, ROLE_HOME[loginRole]);
+    }
+    return NextResponse.next();
   }
 
   const { data: userRecord } = await supabase
