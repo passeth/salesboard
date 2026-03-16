@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createMesClient } from "@/lib/supabase/mes-server";
 import { UserRole } from "@/types";
 import { redirect } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { InventorySearch } from "./inventory-search";
 import { InventorySyncButton } from "./inventory-sync-button";
 import { InventoryTable } from "./inventory-table";
@@ -15,6 +16,33 @@ type AdminInventorySearchParams = {
   sortDir?: string;
   page?: string;
 };
+
+/** Cache production plans for 60s — they don't change per page */
+const getCachedProductionPlans = unstable_cache(
+  async () => {
+    const mesClient = createMesClient();
+    const plansMap = await getProductionPlans(mesClient);
+    // Convert Map to serializable object for caching
+    const obj: Record<string, ReturnType<typeof plansMap.get> extends infer T ? T : never> = {};
+    plansMap.forEach((v, k) => { obj[k] = v; });
+    return obj;
+  },
+  ["production-plans"],
+  { revalidate: 60 }
+);
+
+/** Cache committed quantities for 60s — they don't change per page */
+const getCachedCommittedQty = unstable_cache(
+  async () => {
+    const supabase = await createClient();
+    const committedMap = await getCommittedOrderQuantities(supabase);
+    const obj: Record<string, number> = {};
+    committedMap.forEach((v, k) => { obj[k] = v; });
+    return obj;
+  },
+  ["committed-qty"],
+  { revalidate: 60 }
+);
 
 export default async function AdminInventoryPage({
   searchParams,
@@ -32,9 +60,8 @@ export default async function AdminInventoryPage({
   }
 
   const supabase = await createClient();
-  const mesClient = createMesClient();
 
-  const [inventoryResult, productionPlansMap, committedMap] = await Promise.all([
+  const [inventoryResult, productionPlansObj, committedObj] = await Promise.all([
     getInventorySummary(supabase, {
       search: params.search,
       sort: params.sort,
@@ -42,14 +69,14 @@ export default async function AdminInventoryPage({
       page: safePage,
       pageSize: 20,
     }),
-    getProductionPlans(mesClient),
-    getCommittedOrderQuantities(supabase),
+    getCachedProductionPlans(),
+    getCachedCommittedQty(),
   ]);
 
   const productsWithPlans = inventoryResult.data.map((product) => {
-    const plans = productionPlansMap.get(product.sku) ?? [];
+    const plans = productionPlansObj[product.sku] ?? [];
     const plannedQty = plans.reduce((sum, p) => sum + p.remaining_qty, 0);
-    const committedQty = committedMap.get(product.product_id) ?? 0;
+    const committedQty = committedObj[product.product_id] ?? 0;
     return { ...product, planned_qty: plannedQty, production_plans: plans, committed_qty: committedQty };
   });
 
