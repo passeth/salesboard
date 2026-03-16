@@ -69,11 +69,30 @@ function formatDate(value: string | null | undefined) {
   return new Date(value).toLocaleDateString("en-CA");
 }
 
+function monthsAgo(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  const mfg = new Date(dateStr);
+  const now = new Date();
+  const months = (now.getFullYear() - mfg.getFullYear()) * 12 + (now.getMonth() - mfg.getMonth());
+  return `${months}m`;
+}
+
 function StockLotLine({ lot }: { lot: StockLot }) {
+  const age = monthsAgo(lot.mfg_date);
   return (
     <div className="flex items-baseline gap-2 text-xs leading-5">
       <span className="shrink-0 font-mono text-muted-foreground">{lot.lot_no}</span>
       <span className="shrink-0 text-muted-foreground">{formatDate(lot.mfg_date)}</span>
+      {age && (
+        <span className={cn(
+          "shrink-0 rounded px-1 py-0.5 text-[10px] font-medium",
+          parseInt(age) >= 24 ? "bg-red-100 text-red-700" :
+          parseInt(age) >= 12 ? "bg-amber-100 text-amber-700" :
+          "bg-muted text-muted-foreground"
+        )}>
+          {age}
+        </span>
+      )}
       <span className={cn("shrink-0 tabular-nums", lot.is_partial ? "font-semibold text-amber-600" : "text-muted-foreground")}>
         {lot.in_stock.toLocaleString()}
       </span>
