@@ -73,7 +73,7 @@ export type {
 
 export type CatalogProduct = Pick<
   ProductRow,
-  "id" | "name" | "sku" | "brand" | "category" | "volume_value" | "volume_unit" | "image_url" | "barcode" | "units_per_case" | "cbm"
+  "id" | "name" | "sku" | "brand" | "category" | "volume_value" | "volume_unit" | "image_url" | "barcode" | "units_per_case" | "cbm" | "status"
 >;
 
 export type OrderWithOrg = OrderRow & {

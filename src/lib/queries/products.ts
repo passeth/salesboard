@@ -18,7 +18,6 @@ export async function getActiveProducts(supabase: SupabaseClient, filters?: Prod
   let query = supabase
     .from("products")
     .select("*", { count: "exact" })
-    .eq("status", "active")
     .order("created_at", { ascending: false });
 
   if (filters?.brand) {

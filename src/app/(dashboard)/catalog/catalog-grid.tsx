@@ -20,6 +20,8 @@ import { CatalogProduct, ViewMode } from "@/types";
 import { PackageSearch } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
+import { toggleProductStatus } from "./_actions/product-actions";
 import { ProductCard } from "./product-card";
 
 interface CatalogGridProps {
@@ -28,6 +30,33 @@ interface CatalogGridProps {
   totalCount: number;
   currentPage: number;
   pageSize: number;
+}
+
+function StatusToggle({ productId, status }: { productId: string; status: string }) {
+  const [isPending, startTransition] = useTransition();
+  const isActive = status === "active";
+
+  const handleToggle = () => {
+    startTransition(async () => {
+      await toggleProductStatus(productId, isActive ? "inactive" : "active");
+    });
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={isPending}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${
+        isPending
+          ? "opacity-50 cursor-wait"
+          : isActive
+            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+      }`}
+    >
+      {isPending ? "..." : isActive ? "Active" : "Inactive"}
+    </button>
+  );
 }
 
 export function CatalogGrid({
@@ -79,6 +108,7 @@ export function CatalogGrid({
                 <TableHead className="w-[140px]">Barcode</TableHead>
                 <TableHead className="w-[80px] text-right">CBM</TableHead>
                 <TableHead className="w-[100px]">Volume</TableHead>
+                <TableHead className="w-[80px] text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -127,6 +157,9 @@ export function CatalogGrid({
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {volume ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <StatusToggle productId={product.id} status={product.status} />
                     </TableCell>
                   </TableRow>
                 );
