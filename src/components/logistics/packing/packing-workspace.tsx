@@ -71,8 +71,6 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   Boxes,
-  LayoutPanelTop,
-  PackageCheck,
   Plus,
   RotateCw,
   Save,
@@ -112,6 +110,17 @@ type PackingDragPayload =
       placementId: string;
       widthCells: number;
       depthCells: number;
+      /** Click offset within the dragged box (in grid-cell fractions) */
+      offsetCol: number;
+      offsetRow: number;
+      /** Other selected placements with relative offsets from the primary */
+      companions: Array<{
+        placementId: string;
+        widthCells: number;
+        depthCells: number;
+        deltaX: number;
+        deltaY: number;
+      }>;
     };
 
 type SelectionBox = {
@@ -279,6 +288,7 @@ function getDropGridPosition(
   pallet: PackingPalletDraft,
   policy: PackingSimulationPolicy,
   footprint?: { widthCells: number; depthCells: number },
+  offset?: { col: number; row: number },
 ) {
   const cols = Math.max(1, Math.floor(pallet.widthMm / policy.cellSizeMm));
   const rows = Math.max(1, Math.floor(pallet.depthMm / policy.cellSizeMm));
@@ -287,10 +297,12 @@ function getDropGridPosition(
   const rawRow = ((event.clientY - rect.top) / rect.height) * rows;
   const widthCells = footprint?.widthCells ?? 1;
   const depthCells = footprint?.depthCells ?? 1;
+  const anchorCol = offset ? rawCol - offset.col : rawCol - widthCells / 2;
+  const anchorRow = offset ? rawRow - offset.row : rawRow - depthCells / 2;
 
   return {
-    x: clamp(Math.floor(rawCol - widthCells / 2), 0, Math.max(cols - widthCells, 0)),
-    y: clamp(Math.floor(rawRow - depthCells / 2), 0, Math.max(rows - depthCells, 0)),
+    x: clamp(Math.floor(anchorCol), 0, Math.max(cols - widthCells, 0)),
+    y: clamp(Math.floor(anchorRow), 0, Math.max(rows - depthCells, 0)),
   };
 }
 
@@ -496,12 +508,33 @@ function PalletBoard({
               key={placement.id}
               draggable
               onDragStart={(event) => {
+                const boxRect = event.currentTarget.getBoundingClientRect();
+                const gridEl = event.currentTarget.parentElement!;
+                const gridRect = gridEl.getBoundingClientRect();
+                const offsetCol = ((event.clientX - boxRect.left) / gridRect.width) * cols;
+                const offsetRow = ((event.clientY - boxRect.top) / gridRect.height) * rows;
+
+                const companions = isSelected
+                  ? placements
+                      .filter((p) => selectedPlacementIds.includes(p.id) && p.id !== placement.id)
+                      .map((p) => ({
+                        placementId: p.id,
+                        widthCells: p.widthCells,
+                        depthCells: p.depthCells,
+                        deltaX: p.x - placement.x,
+                        deltaY: p.y - placement.y,
+                      }))
+                  : [];
+
                 const payload: PackingDragPayload = {
                   kind: "placement",
                   sourcePalletId: pallet.localId,
                   placementId: placement.id,
                   widthCells: placement.widthCells,
                   depthCells: placement.depthCells,
+                  offsetCol,
+                  offsetRow,
+                  companions,
                 };
                 event.dataTransfer.setData("application/json", JSON.stringify(payload));
                 event.dataTransfer.effectAllowed = "move";
@@ -871,12 +904,107 @@ export function ShipmentPackingWorkspace({
       const targetLayer = activeLayers[palletId] ?? 0;
 
       if (parsed && "kind" in parsed && parsed.kind === "placement") {
-        const targetPosition = getDropGridPosition(event, targetPallet, policy, {
-          widthCells: parsed.widthCells,
-          depthCells: parsed.depthCells,
-        });
-        let moved = false;
+        const offset =
+          parsed.offsetCol !== undefined && parsed.offsetRow !== undefined
+            ? { col: parsed.offsetCol, row: parsed.offsetRow }
+            : undefined;
+        const targetPosition = getDropGridPosition(
+          event,
+          targetPallet,
+          policy,
+          { widthCells: parsed.widthCells, depthCells: parsed.depthCells },
+          offset,
+        );
+        const companions = parsed.companions ?? [];
+        const isSamePallet = parsed.sourcePalletId === palletId;
 
+        if (companions.length > 0 && isSamePallet) {
+          const cols = Math.max(1, Math.floor(targetPallet.widthMm / policy.cellSizeMm));
+          const rows = Math.max(1, Math.floor(targetPallet.depthMm / policy.cellSizeMm));
+          const allIds = new Set([parsed.placementId, ...companions.map((c) => c.placementId)]);
+
+          setPallets((current) => {
+            const sourcePallet = current.find((p) => p.localId === palletId);
+            const primaryPlacement = sourcePallet?.placements.find((p) => p.id === parsed.placementId);
+            if (!sourcePallet || !primaryPlacement) return current;
+
+            const deltaX = targetPosition.x - primaryPlacement.x;
+            const deltaY = targetPosition.y - primaryPlacement.y;
+            if (deltaX === 0 && deltaY === 0 && targetLayer === primaryPlacement.layer) return current;
+
+            const movedPlacements = sourcePallet.placements
+              .filter((p) => allIds.has(p.id))
+              .map((p) => ({
+                ...p,
+                x: p.x + deltaX,
+                y: p.y + deltaY,
+                layer: targetLayer,
+              }));
+
+            const allInBounds = movedPlacements.every(
+              (p) => p.x >= 0 && p.y >= 0 && p.x + p.widthCells <= cols && p.y + p.depthCells <= rows,
+            );
+            if (!allInBounds) return current;
+
+            return current.map((pallet) => {
+              if (pallet.localId !== palletId) return pallet;
+              return {
+                ...pallet,
+                placements: pallet.placements.map((p) => {
+                  if (!allIds.has(p.id)) return p;
+                  return { ...p, x: p.x + deltaX, y: p.y + deltaY, layer: targetLayer };
+                }),
+              };
+            });
+          });
+
+          setSelectedPalletId(palletId);
+          setMessage(null);
+          setErrorMessage(null);
+          return;
+        }
+
+        if (companions.length > 0 && !isSamePallet) {
+          let moved = false;
+          setPallets((current) => {
+            let next = current;
+            const primaryResult = movePlacementBetweenPallets(
+              next,
+              parsed.sourcePalletId,
+              parsed.placementId,
+              palletId,
+              { layer: targetLayer, x: targetPosition.x, y: targetPosition.y },
+              policy,
+            );
+            if (!primaryResult) return current;
+            next = primaryResult;
+            moved = true;
+
+            for (const companion of companions) {
+              const cols = Math.max(1, Math.floor(targetPallet.widthMm / policy.cellSizeMm));
+              const rows = Math.max(1, Math.floor(targetPallet.depthMm / policy.cellSizeMm));
+              const cx = clamp(targetPosition.x + companion.deltaX, 0, Math.max(cols - companion.widthCells, 0));
+              const cy = clamp(targetPosition.y + companion.deltaY, 0, Math.max(rows - companion.depthCells, 0));
+              const result = movePlacementBetweenPallets(
+                next,
+                parsed.sourcePalletId,
+                companion.placementId,
+                palletId,
+                { layer: targetLayer, x: cx, y: cy },
+                policy,
+              );
+              if (result) next = result;
+            }
+            return next;
+          });
+
+          setSelectedPalletId(palletId);
+          setMessage(null);
+          setErrorMessage(moved ? null : "Cannot move selected boxes to that position.");
+          return;
+        }
+
+        let moved = false;
         setPallets((current) => {
           const next = movePlacementBetweenPallets(
             current,
@@ -1379,88 +1507,47 @@ export function ShipmentPackingWorkspace({
                     item.product.caseWidthCm === null ||
                     item.product.caseHeightCm === null;
                   const weightMissing = item.product.caseGrossWeightKg === null;
+                  const caseCbmM3 =
+                    item.product.caseLengthCm && item.product.caseWidthCm && item.product.caseHeightCm
+                      ? (item.product.caseLengthCm * item.product.caseWidthCm * item.product.caseHeightCm) / 1_000_000
+                      : 0;
 
                   return (
-                    <div key={item.orderItemId} className="rounded-xl border p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 space-y-1">
-                            <p className="text-xs font-medium text-muted-foreground">Line {item.lineNo}</p>
-                            <p className="text-sm font-semibold">{item.product.name}</p>
-                            <p className="text-xs text-muted-foreground">{item.product.sku}</p>
+                    <div key={item.orderItemId} className="rounded-xl border p-3">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <span className="shrink-0 text-xs font-semibold text-muted-foreground">[{item.product.sku}]</span>
+                            <span className="truncate text-sm font-medium">{item.product.name}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {progress.overpackedUnits > 0 ? (
-                              <Badge variant="destructive">Overpacked</Badge>
-                            ) : logisticsMissing ? (
-                              <Badge variant="outline">Need dimensions</Badge>
-                            ) : weightMissing ? (
-                              <Badge variant="outline">Need weight</Badge>
-                            ) : (
-                              <Badge variant="outline">Ready</Badge>
-                            )}
-                            <Button
-                              type="button"
-                              size="icon-sm"
-                              variant="outline"
-                              onClick={() => handleQuickAddCase(item.orderItemId, selectedPalletId)}
-                              disabled={!selectedPalletId || progress.remainingCaseQty <= 0}
-                              aria-label={`Add 1 case of ${item.product.sku || item.product.name} to selected pallet`}
-                              title="Add 1 case to selected pallet"
-                            >
-                              <Plus className="size-4" />
-                            </Button>
-                          </div>
+                          {progress.overpackedUnits > 0 ? (
+                            <Badge variant="destructive" className="shrink-0">Overpacked</Badge>
+                          ) : logisticsMissing ? (
+                            <Badge variant="outline" className="shrink-0">Need dims</Badge>
+                          ) : weightMissing ? (
+                            <Badge variant="outline" className="shrink-0">Need wt</Badge>
+                          ) : (
+                            <Badge variant="outline" className="shrink-0">Ready</Badge>
+                          )}
                         </div>
 
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <Badge variant="secondary">Target {formatNumber(item.packableCaseQty)} cases</Badge>
-                          <Badge variant="outline">Remaining {formatNumber(progress.remainingCaseQty)} cases</Badge>
-                          {progress.remainingLooseUnitQty > 0 ? (
-                            <Badge variant="outline">{formatNumber(progress.remainingLooseUnitQty)} loose pcs</Badge>
-                          ) : null}
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Add: {formatNumber(progress.assignedCaseQty)}/Total: {formatNumber(item.packableCaseQty)}
+                          {" | "}Remain: {formatNumber(progress.remainingCaseQty)}
+                          {" | "}CBM: {formatCbm(caseCbmM3)}
+                          {" | "}Wt: {weightMissing ? "?" : `${item.product.caseGrossWeightKg} kg`}
+                        </p>
 
-                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                          <p>
-                            Size (W × D × H):{" "}
-                            {item.product.caseLengthCm && item.product.caseWidthCm && item.product.caseHeightCm
-                              ? `${item.product.caseLengthCm} × ${item.product.caseWidthCm} × ${item.product.caseHeightCm} cm`
-                              : "TBD"}
-                          </p>
-                          <p>Gross: {weightMissing ? "Unknown" : `${item.product.caseGrossWeightKg} kg/case`}</p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
-                            draggable={progress.remainingCaseQty > 0}
-                            onDragStart={(event) => {
-                              const payload: PackingDragPayload = {
-                                kind: "queue_case",
-                                orderItemId: item.orderItemId,
-                              };
-                              event.dataTransfer.setData(
-                                "application/json",
-                                JSON.stringify(payload),
-                              );
-                              event.dataTransfer.effectAllowed = "move";
-                            }}
-                            disabled={progress.remainingCaseQty <= 0}
-                          >
-                            <LayoutPanelTop className="size-4" />
-                            Drag case
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
                             onClick={() => handleQuickAddCase(item.orderItemId, selectedPalletId)}
                             disabled={!selectedPalletId || progress.remainingCaseQty <= 0}
                           >
-                            <PackageCheck className="size-4" />
-                            Add to selected
+                            <Plus className="size-3" />
+                            Add
                           </Button>
                           <Button
                             type="button"
@@ -1469,7 +1556,7 @@ export function ShipmentPackingWorkspace({
                             onClick={() => handleFillRowCases(item.orderItemId, selectedPalletId)}
                             disabled={!selectedPalletId || progress.remainingCaseQty <= 0}
                           >
-                            Fill row
+                            Fill Row
                           </Button>
                           <Button
                             type="button"
@@ -1478,8 +1565,7 @@ export function ShipmentPackingWorkspace({
                             onClick={() => handleFillRowCases(item.orderItemId, selectedPalletId, true)}
                             disabled={!selectedPalletId || progress.remainingCaseQty <= 0}
                           >
-                            <RotateCw className="size-4" />
-                            Fill row 90°
+                            Fill 90
                           </Button>
                           <Button
                             type="button"
@@ -1488,7 +1574,7 @@ export function ShipmentPackingWorkspace({
                             onClick={() => openPartialDialog(item.orderItemId)}
                             disabled={!selectedPalletId || progress.remainingUnitQty <= 0}
                           >
-                            Loose units
+                            Loose
                           </Button>
                         </div>
                       </div>
