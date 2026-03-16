@@ -1531,12 +1531,12 @@ export function ShipmentPackingWorkspace({
                           )}
                         </div>
 
-                        <p className="text-xs text-muted-foreground">
-                          Add: {formatNumber(progress.assignedCaseQty)}/Total: {formatNumber(item.packableCaseQty)}
-                          {" | "}Remain: {formatNumber(progress.remainingCaseQty)}
-                          {" | "}CBM: {formatCbm(caseCbmM3)}
-                          {" | "}Wt: {weightMissing ? "?" : `${item.product.caseGrossWeightKg} kg`}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+                          <span><span className="text-muted-foreground">Add</span> <span className="font-medium">{formatNumber(progress.assignedCaseQty)}</span><span className="text-muted-foreground">/{formatNumber(item.packableCaseQty)}</span></span>
+                          <span><span className="text-muted-foreground">Remain</span> <span className="font-semibold text-foreground">{formatNumber(progress.remainingCaseQty)}</span></span>
+                          <span><span className="text-muted-foreground">CBM</span> <span className="font-medium">{formatCbm(caseCbmM3)}</span></span>
+                          <span><span className="text-muted-foreground">Wt</span> <span className="font-medium">{weightMissing ? "?" : `${item.product.caseGrossWeightKg}kg`}</span></span>
+                        </div>
 
                         <div className="flex flex-wrap gap-1.5">
                           <Button
