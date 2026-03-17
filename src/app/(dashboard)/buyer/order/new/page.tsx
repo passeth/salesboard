@@ -1,24 +1,15 @@
+import { PageHeader } from "@/components/page-header";
 import { getCurrentUser } from "@/lib/auth";
-import { getOrderById, getOrderItems } from "@/lib/queries/orders";
-import { getShipToOrganizations } from "@/lib/queries/organizations";
+import { getBuyerDraftOrder } from "@/lib/queries/products";
+import { getShipToOrganizations, getBuyerOrganizations } from "@/lib/queries/organizations";
 import { createClient } from "@/lib/supabase/server";
-import { OrganizationRow } from "@/types";
+import { UserRole, type OrganizationRow } from "@/types";
 import { redirect } from "next/navigation";
+import { BuyerOrgSelector } from "../../buyer-org-selector";
 import { OrderForm } from "./order-form";
 
 type NewOrderSearchParams = {
-  product?: string;
-  draft?: string;
-  clone?: string;
-};
-
-type ProductOption = {
-  id: string;
-  sku: string;
-  name: string;
-  brand: string | null;
-  units_per_case: number | null;
-  image_url: string | null;
+  org?: string;
 };
 
 export default async function NewOrderPage({
@@ -27,7 +18,6 @@ export default async function NewOrderPage({
   searchParams: Promise<NewOrderSearchParams>;
 }) {
   const params = await searchParams;
-  const preSelectedProductId = params.product;
 
   const currentUser = await getCurrentUser();
   if (!currentUser || !currentUser.orgId) {
@@ -35,62 +25,38 @@ export default async function NewOrderPage({
   }
 
   const supabase = await createClient();
-  const [{ data: products }, shipToResult] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, sku, name, brand, units_per_case, image_url")
-      .eq("status", "active")
-      .order("name", { ascending: true }),
-    getShipToOrganizations(supabase, currentUser.orgId),
-  ]);
+  const isAdmin = currentUser.role === UserRole.Admin;
 
-  const shipToOrgs: OrganizationRow[] = shipToResult.data;
+  const selectedOrgId = isAdmin && params.org ? params.org : currentUser.orgId;
 
-  const productList = (products ?? []) as ProductOption[];
-  let draftId: string | undefined;
-  let initialValues: React.ComponentProps<typeof OrderForm>["initialValues"];
+  let draftOrder = null;
+  let shipToOrgs: Array<{ id: string; name: string }> = [];
 
-  const sourceOrderId = params.draft ?? params.clone;
-
-  if (sourceOrderId) {
-    const [orderResult, itemsResult] = await Promise.all([
-      getOrderById(supabase, sourceOrderId),
-      getOrderItems(supabase, sourceOrderId),
+  if (selectedOrgId) {
+    const [draftResult, shipToResult] = await Promise.all([
+      getBuyerDraftOrder(supabase, selectedOrgId),
+      getShipToOrganizations(supabase, selectedOrgId),
     ]);
 
-    if (orderResult.data && itemsResult.data.length > 0) {
-      const order = orderResult.data;
-      const meta = (order.metadata_json ?? {}) as Record<string, string>;
+    draftOrder = draftResult.data;
+    shipToOrgs = shipToResult.data;
+  }
 
-      if (params.draft && order.status === "draft") {
-        draftId = sourceOrderId;
-      }
-
-      initialValues = {
-        items: itemsResult.data.map((item) => ({
-          product_id: item.product_id,
-          product_name: item.product.name,
-          product_sku: item.product.sku,
-          requested_qty: item.requested_qty,
-          units_per_case: item.units_per_case,
-          unit_price: item.unit_price,
-          image_url: item.product.image_url ?? null,
-        })),
-        requested_delivery_date: order.requested_delivery_date,
-        ship_to_org_id: order.ship_to_org_id ?? shipToOrgs[0]?.id ?? currentUser.orgId,
-        memo: meta.memo ?? "",
-      };
-    }
+  let buyerOrgs: Pick<OrganizationRow, "id" | "name" | "code" | "org_type">[] = [];
+  if (isAdmin) {
+    const buyerOrgsResult = await getBuyerOrganizations(supabase);
+    buyerOrgs = buyerOrgsResult.data;
   }
 
   return (
-    <OrderForm
-      products={productList}
-      shipToOrgs={shipToOrgs}
-      preSelectedProductId={preSelectedProductId}
-      userOrgId={currentUser.orgId}
-      draftId={draftId}
-      initialValues={initialValues}
-    />
+    <div className="space-y-6">
+      {isAdmin && buyerOrgs.length > 0 ? (
+        <BuyerOrgSelector organizations={buyerOrgs} currentOrgId={selectedOrgId} />
+      ) : null}
+
+      <PageHeader title="Review Order" description="Review your cart and submit your order" />
+
+      <OrderForm draftOrder={draftOrder} shipToOrgs={shipToOrgs} orgId={selectedOrgId} />
+    </div>
   );
 }

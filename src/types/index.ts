@@ -142,3 +142,51 @@ export type BuyerProduct = Pick<
   last_order_qty: number;
   last_order_date: string | null;
 };
+
+/** Full product catalog for buyer — includes pricing, 3-month performance, and cart state */
+export type BuyerCatalogProduct = Pick<
+  ProductRow,
+  | "id"
+  | "name"
+  | "sku"
+  | "brand"
+  | "category"
+  | "volume_value"
+  | "volume_unit"
+  | "image_url"
+  | "barcode"
+  | "units_per_case"
+  | "cbm"
+  | "gross_weight"
+> & {
+  /** Last known supply price from most recent completed order (null if never traded) */
+  last_unit_price: number | null;
+  /** Total boxes shipped/completed in the last 3 months */
+  shipped_qty_3m: number;
+  /** Total boxes currently in the draft order (cart), 0 if not in cart */
+  cart_qty: number;
+  /** Whether this product has any prior order history with this buyer */
+  has_trade_history: boolean;
+};
+
+/** Buyer's draft order (cart) summary */
+export type BuyerDraftOrder = {
+  id: string;
+  order_no: string;
+  ship_to_org_id: string | null;
+  requested_delivery_date: string | null;
+  memo: string;
+  items: Array<{
+    id: string;
+    product_id: string;
+    product_name: string;
+    product_sku: string;
+    image_url: string | null;
+    requested_qty: number;
+    units_per_case: number | null;
+    unit_price: number | null;
+    gross_weight: number | null;
+    cbm: number | null;
+  }>;
+  created_at: string;
+};

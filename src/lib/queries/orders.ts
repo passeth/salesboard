@@ -37,6 +37,7 @@ export async function getBuyerOrders(supabase: SupabaseClient, orgId: string | n
   let query = supabase
     .from("orders")
     .select("*, organization:ordering_org_id(name, code), ship_to:ship_to_org_id(name, code)", { count: "exact" })
+    .neq("status", "draft")
     .order(filters?.sort ?? "created_at", { ascending: filters?.sortDir === "asc" });
 
   if (orgId) {

@@ -7,6 +7,7 @@ import {
   Boxes,
   Building2,
   FileText,
+  FolderSync,
   Globe2,
   Home,
   PackageSearch,
@@ -85,6 +86,7 @@ const NAV_SECTIONS_BY_ROLE: Record<UserRole, NavSection[]> = {
         { href: "/admin/products", label: "Products", icon: Boxes },
         { href: "/admin/inventory", label: "Inventory", icon: PackageSearch },
         { href: "/admin/orders", label: "All Orders", icon: ShoppingCart },
+        { href: "/admin/content-mapping", label: "Content Mapping", icon: FolderSync },
       ],
     },
     {
@@ -129,6 +131,7 @@ const NAV_SECTIONS_BY_ROLE: Record<UserRole, NavSection[]> = {
 type SidebarProps = {
   userRole: UserRole;
   userEmail?: string | null;
+  cartItemCount?: number;
 };
 
 function isActive(pathname: string, href: string, allHrefs: string[]) {
@@ -175,7 +178,7 @@ function getRoleLabel(role: UserRole) {
   }
 }
 
-export function Sidebar({ userRole, userEmail }: SidebarProps) {
+export function Sidebar({ userRole, userEmail, cartItemCount }: SidebarProps) {
   const pathname = usePathname();
   const sections = NAV_SECTIONS_BY_ROLE[userRole];
   const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href));
@@ -238,6 +241,11 @@ export function Sidebar({ userRole, userEmail }: SidebarProps) {
                   >
                     <Icon className="size-4" />
                     {item.label}
+                    {item.href === "/buyer/products" && cartItemCount != null && cartItemCount > 0 && (
+                      <span className="ml-auto inline-flex size-5 items-center justify-center rounded-full bg-sidebar-primary text-[10px] font-bold text-sidebar-primary-foreground">
+                        {cartItemCount > 99 ? "99+" : cartItemCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

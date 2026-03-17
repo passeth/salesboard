@@ -1,7 +1,13 @@
 import { PageHeader } from "@/components/page-header";
 import { getCurrentUser } from "@/lib/auth";
 import { getBuyerOrganizations } from "@/lib/queries/organizations";
-import { getBuyerProducts } from "@/lib/queries/products";
+import {
+  getProductBrands,
+  getProductCatalogForBuyer,
+  getProductTranslations,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+} from "@/lib/queries/products";
 import { createClient } from "@/lib/supabase/server";
 import { UserRole } from "@/types";
 import { redirect } from "next/navigation";
@@ -14,7 +20,11 @@ export default async function BuyerProductsPage({
   searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
   const params = await searchParams;
-  const q = params.q;
+  const brand = params.brand;
+  const rawLang = params.lang ?? "en";
+  const locale: SupportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(rawLang)
+    ? (rawLang as SupportedLocale)
+    : "en";
 
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/login");
@@ -32,15 +42,21 @@ export default async function BuyerProductsPage({
     buyerOrgs = data;
   }
 
-  const productsResult = selectedOrgId
-    ? await getBuyerProducts(supabase, selectedOrgId, { search: q })
-    : { data: [] };
+  const [productsResult, brands, translations] = await Promise.all([
+    selectedOrgId
+      ? getProductCatalogForBuyer(supabase, selectedOrgId, { brand })
+      : { data: [], error: null },
+    getProductBrands(supabase),
+    getProductTranslations(supabase, locale),
+  ]);
+
+  const translationsObj = Object.fromEntries(translations);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Our Products"
-        description="Products you've ordered with cumulative quantities"
+        title="Product Catalog"
+        description="Browse all products, add to cart for ordering"
       />
 
       {isAdmin ? (
@@ -50,7 +66,13 @@ export default async function BuyerProductsPage({
         />
       ) : null}
 
-      <BuyerProductsGrid products={productsResult.data} />
+      <BuyerProductsGrid
+        products={productsResult.data}
+        brands={brands}
+        orgId={selectedOrgId ?? ""}
+        locale={locale}
+        translations={translationsObj}
+      />
     </div>
   );
 }

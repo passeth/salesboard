@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getProductById } from "@/lib/queries/products";
+import { listContentFiles } from "@/lib/r2/actions";
 import { notFound } from "next/navigation";
 import {
   Breadcrumb,
@@ -14,6 +15,7 @@ import { ProductInfo } from "./product-info";
 import { ProductLogistics } from "./product-logistics";
 import { ProductMarketTabs } from "./product-market-tabs";
 import { AddToCartButton } from "./add-to-cart-button";
+import { BrandContentGallery } from "./brand-content-gallery";
 import { Package } from "lucide-react";
 import type { ProductMarketContentRow } from "@/types/database";
 
@@ -33,6 +35,33 @@ export default async function ProductDetailPage({
     .select("*")
     .eq("product_id", id)
     .eq("content_status", "active");
+
+  const { data: masterData } = await supabase
+    .from("product_master")
+    .select("content_slug")
+    .eq("product_code", product.sku)
+    .maybeSingle();
+
+  const contentSlug = masterData?.content_slug ?? null;
+
+  let brandContentFiles: Array<{
+    key: string;
+    fileName: string;
+    category: string;
+    size: number;
+    lastModified: string;
+    publicUrl: string;
+  }> = [];
+
+  if (contentSlug) {
+    const result = await listContentFiles(contentSlug);
+    if (result.success && result.files) {
+      brandContentFiles = result.files.map((f) => ({
+        ...f,
+        lastModified: f.lastModified.toISOString(),
+      }));
+    }
+  }
 
   const currentUser = await getCurrentUser();
   const userRole = currentUser?.role ?? null;
@@ -77,6 +106,11 @@ export default async function ProductDetailPage({
 
       <ProductMarketTabs
         marketContents={(marketContents ?? []) as ProductMarketContentRow[]}
+      />
+
+      <BrandContentGallery
+        contentSlug={contentSlug}
+        files={brandContentFiles}
       />
 
       {userRole === "buyer" && (

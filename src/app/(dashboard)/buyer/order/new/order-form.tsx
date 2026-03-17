@@ -1,7 +1,8 @@
 "use client";
 
-import { createAndSubmitOrder, saveDraft, submitDraft } from "@/app/(dashboard)/buyer/_actions/order-actions";
-import { PageHeader } from "@/components/page-header";
+import { updateCartItemQty, removeCartItem, clearCart } from "@/app/(dashboard)/buyer/_actions/cart-actions";
+import { submitDraft } from "@/app/(dashboard)/buyer/_actions/order-actions";
+import { EmptyState } from "@/components/empty-state";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,176 +25,251 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { createOrderSchema } from "@/lib/validations/order";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle } from "lucide-react";
+import type { BuyerDraftOrder } from "@/types";
+import { ArrowLeft, Package, ShoppingCart, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useTransition } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
-import { LineItemRow, OrderFormValues } from "./line-item-row";
-import { ProductSelector, SelectableProduct } from "./product-selector";
+import { useMemo, useState, useTransition } from "react";
+import { LineItemRow } from "./line-item-row";
 
 type OrderFormProps = {
-  products: SelectableProduct[];
+  draftOrder: BuyerDraftOrder | null;
   shipToOrgs: Array<{ id: string; name: string }>;
-  preSelectedProductId?: string;
-  userOrgId: string;
-  draftId?: string;
-  initialValues?: {
-    items: Array<{
-      product_id: string;
-      product_name: string;
-      product_sku: string;
-      requested_qty: number;
-      units_per_case: number | null;
-      unit_price: number | null;
-      image_url: string | null;
-    }>;
-    requested_delivery_date: string | null;
-    ship_to_org_id: string;
-    memo: string;
-  };
+  orgId: string;
 };
 
-const formSchema = createOrderSchema.extend({
-  items: z.array(
-    z.object({
-      product_id: z.string().uuid(),
-      product_name: z.string(),
-      product_sku: z.string(),
-      requested_qty: z.number().int().min(1),
-      units_per_case: z.number().int().positive().nullable(),
-      unit_price: z.number().nonnegative().nullable(),
-      image_url: z.string().nullable(),
-    }),
-  ),
-});
-
-export function OrderForm({
-  products,
-  shipToOrgs,
-  preSelectedProductId,
-  userOrgId,
-  draftId,
-  initialValues,
-}: OrderFormProps) {
+export function OrderForm({ draftOrder, shipToOrgs, orgId }: OrderFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const defaultShipTo = shipToOrgs[0]?.id ?? userOrgId;
-
-  const form = useForm<OrderFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: initialValues ?? {
-      items: [],
-      requested_delivery_date: null,
-      ship_to_org_id: defaultShipTo,
-      memo: "",
-    },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items",
-  });
-
-  const watchedItems = form.watch("items");
-
-  const selectedProductIds = useMemo(
-    () => watchedItems.map((item) => item.product_id),
-    [watchedItems],
+  const [shipToOrgId, setShipToOrgId] = useState(
+    draftOrder?.ship_to_org_id ?? shipToOrgs[0]?.id ?? ""
   );
+  const [deliveryDate, setDeliveryDate] = useState(
+    draftOrder?.requested_delivery_date ?? ""
+  );
+  const [memo, setMemo] = useState(draftOrder?.memo ?? "");
 
   const totals = useMemo(() => {
-    const totalLines = watchedItems.length;
-    const totalBoxes = watchedItems.reduce((sum, item) => sum + (item.requested_qty || 0), 0);
-    const totalPieces = watchedItems.reduce((sum, item) => {
-      if (item.units_per_case === null) {
-        return sum;
-      }
-
-      return sum + (item.requested_qty || 0) * item.units_per_case;
-    }, 0);
-
-    return { totalLines, totalBoxes, totalPieces };
-  }, [watchedItems]);
-
-  useEffect(() => {
-    if (!preSelectedProductId) {
-      return;
+    if (!draftOrder?.items) {
+      return {
+        totalItems: 0,
+        totalBoxes: 0,
+        totalPcs: 0,
+        totalWeight: 0,
+        totalAmount: 0,
+        totalCbm: 0,
+        hasPriceTbd: false,
+      };
     }
 
-    if (selectedProductIds.includes(preSelectedProductId)) {
-      return;
-    }
+    const items = draftOrder.items;
+    const totalItems = items.length;
+    const totalBoxes = items.reduce((sum, item) => sum + item.requested_qty, 0);
+    const totalPcs = items.reduce(
+      (sum, item) => sum + item.requested_qty * (item.units_per_case ?? 0),
+      0
+    );
+    const totalWeight = items.reduce(
+      (sum, item) => sum + item.requested_qty * (item.gross_weight ?? 0),
+      0
+    );
+    const totalAmount = items.reduce(
+      (sum, item) => sum + item.requested_qty * (item.unit_price ?? 0),
+      0
+    );
+    const totalCbm = items.reduce(
+      (sum, item) => sum + item.requested_qty * (item.cbm ?? 0),
+      0
+    );
+    const hasPriceTbd = items.some((item) => item.unit_price === null);
 
-    const product = products.find((candidate) => candidate.id === preSelectedProductId);
-    if (!product) {
-      return;
-    }
+    return {
+      totalItems,
+      totalBoxes,
+      totalPcs,
+      totalWeight,
+      totalAmount,
+      totalCbm,
+      hasPriceTbd,
+    };
+  }, [draftOrder?.items]);
 
-    append({
-      product_id: product.id,
-      product_name: product.name,
-      product_sku: product.sku,
-      requested_qty: 1,
-      units_per_case: product.units_per_case,
-      unit_price: null,
-      image_url: product.image_url,
-    });
-  }, [append, preSelectedProductId, products, selectedProductIds]);
+  const handleSubmit = () => {
+    if (!draftOrder) return;
 
-  const addProduct = (product: SelectableProduct) => {
-    if (selectedProductIds.includes(product.id)) {
-      return;
-    }
-
-    append({
-      product_id: product.id,
-      product_name: product.name,
-      product_sku: product.sku,
-      requested_qty: 1,
-      units_per_case: product.units_per_case,
-      unit_price: null,
-      image_url: product.image_url,
+    startTransition(async () => {
+      await submitDraft(draftOrder.id);
     });
   };
 
-  const buildPayload = (values: OrderFormValues) => ({
-    ordering_org_id: userOrgId,
-    ship_to_org_id: values.ship_to_org_id,
-    requested_delivery_date: values.requested_delivery_date,
-    memo: values.memo,
-    items: values.items.map((item) => ({
-      product_id: item.product_id,
-      requested_qty: item.requested_qty,
-      units_per_case: item.units_per_case,
-      unit_price: item.unit_price,
-    })),
-  });
+  const handleClearCart = () => {
+    if (!draftOrder) return;
 
-  const onSubmit = form.handleSubmit((values) => {
     startTransition(async () => {
-      if (draftId) {
-        await submitDraft(draftId);
-      } else {
-        await createAndSubmitOrder(buildPayload(values));
-      }
-    });
-  });
-
-  const onSaveDraft = () => {
-    const values = form.getValues();
-    startTransition(async () => {
-      await saveDraft({ ...buildPayload(values), draftId });
+      await clearCart(draftOrder.id);
+      router.push("/buyer/products");
     });
   };
+
+  if (!draftOrder) {
+    return (
+      <EmptyState
+        icon={ShoppingCart}
+        title="Your cart is empty"
+        description="Add products from the catalog to get started"
+        action={{
+          label: "Browse Products",
+          href: "/buyer/products",
+        }}
+      />
+    );
+  }
 
   return (
-    <form className="flex flex-col gap-6" onSubmit={(e) => e.preventDefault()}>
-      <PageHeader title="Create New Order" />
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Package className="size-4" />
+              Items
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{totals.totalItems}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Boxes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {totals.totalBoxes.toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Pcs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {totals.totalPcs.toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Weight
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{totals.totalWeight.toFixed(1)} kg</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Amount
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              ${totals.totalAmount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </p>
+            {totals.hasPriceTbd && (
+              <p className="text-xs text-muted-foreground">(Price TBD)</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total CBM
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{totals.totalCbm.toFixed(3)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle>Cart Items</CardTitle>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Trash2 className="mr-2 size-4" />
+                Clear Cart
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear cart?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove all items from your cart. This action cannot
+                  be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearCart}>
+                  Clear Cart
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[60px]">Image</TableHead>
+                <TableHead>Product</TableHead>
+                <TableHead className="w-[100px]">Unit Price</TableHead>
+                <TableHead className="w-[100px]">Qty</TableHead>
+                <TableHead className="w-[100px]">Pcs</TableHead>
+                <TableHead className="w-[100px]">Weight</TableHead>
+                <TableHead className="w-[120px]">Amount</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {draftOrder.items.map((item) => (
+                <LineItemRow
+                  key={item.id}
+                  orderId={draftOrder.id}
+                  item={item}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -201,40 +277,43 @@ export function OrderForm({
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="requested_delivery_date">Requested Delivery Date</Label>
-            <Input
-              id="requested_delivery_date"
-              type="date"
-              {...form.register("requested_delivery_date")}
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="ship_to_org_id">Ship To</Label>
             {shipToOrgs.length === 0 ? (
               <div className="rounded-md border border-dashed border-muted-foreground/30 px-3 py-2 text-sm text-muted-foreground">
                 No ship-to locations registered.{" "}
-                <a href="/buyer/ship-to" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                <Link
+                  href="/buyer/ship-to"
+                  className="text-primary underline underline-offset-4 hover:text-primary/80"
+                >
                   Add one
-                </a>
+                </Link>
               </div>
             ) : (
-              <Select
-                value={form.watch("ship_to_org_id")}
-                onValueChange={(value) => form.setValue("ship_to_org_id", value)}
-              >
+              <Select value={shipToOrgId} onValueChange={setShipToOrgId}>
                 <SelectTrigger id="ship_to_org_id">
                   <SelectValue placeholder="Select destination" />
                 </SelectTrigger>
                 <SelectContent>
-                  {shipToOrgs.map((organization) => (
-                    <SelectItem key={organization.id} value={organization.id}>
-                      {organization.name}
+                  {shipToOrgs.map((org) => (
+                    <SelectItem key={org.id} value={org.id}>
+                      {org.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requested_delivery_date">
+              Requested Delivery Date
+            </Label>
+            <Input
+              id="requested_delivery_date"
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+            />
           </div>
 
           <div className="space-y-2 md:col-span-2">
@@ -244,96 +323,74 @@ export function OrderForm({
               rows={3}
               maxLength={500}
               placeholder="Optional notes for this order"
-              {...form.register("memo")}
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
             />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle>Order Items</CardTitle>
-          <ProductSelector
-            products={products}
-            onSelect={addProduct}
-            selectedIds={selectedProductIds}
-          />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-[minmax(220px,1fr)_120px_100px_180px_140px_44px] gap-3 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <span>Product</span>
-            <span>Qty (boxes)</span>
-            <span>UPC</span>
-            <span>Pcs</span>
-            <span>Price</span>
-            <span />
-          </div>
-
-          {fields.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Add at least one product to start this order.
-            </div>
-          ) : (
-            fields.map((field, index) => (
-              <LineItemRow
-                key={field.id}
-                index={index}
-                item={watchedItems[index]}
-                control={form.control}
-                onRemove={() => remove(index)}
-              />
-            ))
-          )}
-
-          {watchedItems.some((item) => item.units_per_case === null) ? (
-            <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              <AlertTriangle className="size-4" />
-              Units per case unknown for some products.
-            </div>
-          ) : null}
-
-          <div className="rounded-md bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-            Total items: <span className="font-medium text-foreground">{totals.totalLines}</span> | Total boxes:{" "}
-            <span className="font-medium text-foreground">{totals.totalBoxes}</span> | Total pcs:{" "}
-            <span className="font-medium text-foreground">{totals.totalPieces}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {form.formState.errors.items?.message ? (
-        <p className="text-sm text-destructive">{form.formState.errors.items.message}</p>
-      ) : null}
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => router.push("/buyer/orders")}>
-          Cancel
+      <div className="flex justify-between gap-2">
+        <Button variant="outline" asChild>
+          <Link href="/buyer/products">
+            <ArrowLeft className="mr-2 size-4" />
+            Back to Products
+          </Link>
         </Button>
-        <Button type="button" variant="secondary" disabled={isPending} onClick={onSaveDraft}>
-          {isPending ? "Saving..." : "Save as Draft"}
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button type="button" disabled={isPending || watchedItems.length === 0}>
-              {isPending ? "Submitting..." : "Submit Order"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Submit this order?</AlertDialogTitle>
-              <AlertDialogDescription>
-                You are about to submit an order with {watchedItems.length} item(s) ({totals.totalBoxes} boxes).
-                This order will be sent for review and cannot be edited after submission.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Go Back</AlertDialogCancel>
-              <AlertDialogAction onClick={onSubmit} disabled={isPending}>
-                Confirm &amp; Submit
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+
+        <div className="flex gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline">
+                <Trash2 className="mr-2 size-4" />
+                Clear Cart
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear cart?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove all items from your cart. This action cannot
+                  be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearCart}>
+                  Clear Cart
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button disabled={isPending || draftOrder.items.length === 0}>
+                {isPending ? "Submitting..." : "Submit Order"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Submit this order?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You are about to submit an order with {totals.totalItems}{" "}
+                  item(s) ({totals.totalBoxes} boxes). This order will be sent
+                  for review and cannot be edited after submission.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Go Back</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleSubmit}
+                  disabled={isPending}
+                >
+                  Confirm &amp; Submit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
-    </form>
+    </div>
   );
 }

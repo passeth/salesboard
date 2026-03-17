@@ -10,7 +10,7 @@ import { getOrderById, getOrderEvents, getOrderItems } from "@/lib/queries/order
 import { createClient } from "@/lib/supabase/server";
 import { DocumentRow, InvoiceRow, OrderWithOrg, ShipmentRow } from "@/types";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { BuyerDecisionSection } from "./buyer-decision-section";
 import { OrderDetailTabs } from "./order-detail-tabs";
 import { OrderSummaryHeader } from "./order-summary-header";
@@ -44,6 +44,11 @@ export default async function BuyerOrderDetailPage({
 
   if (!order) {
     notFound();
+  }
+
+  // Draft orders redirect to cart review page
+  if (order.status === "draft") {
+    redirect(`/buyer/order/new?draft=${order.id}`);
   }
 
   return (
