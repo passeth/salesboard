@@ -8,7 +8,8 @@
     "start": "next start",
     "tokens": "npx tsx src/design-tokens/generate-css.ts",
     "figma:sync": "npx tsx src/design-tokens/figma-sync.ts",
-    "figma:guide": "npx tsx src/design-tokens/figma-push.ts"
+    "figma:guide": "npx tsx src/design-tokens/figma-push.ts",
+    "migrate:images": "npx tsx scripts/migrate-product-images.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1010.0",

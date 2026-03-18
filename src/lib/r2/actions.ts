@@ -4,6 +4,7 @@ import {
   ListObjectsV2Command,
   PutObjectCommand,
   DeleteObjectCommand,
+  CopyObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getR2Client, R2_BUCKET, R2_PUBLIC_URL } from "./client";
 import type { R2ContentFile } from "./types";
@@ -104,6 +105,28 @@ export async function uploadContentFile(
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Failed to upload file";
+    return { success: false, error: message };
+  }
+}
+
+export async function copyContentFile(
+  sourceKey: string,
+  destinationKey: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = getR2Client();
+
+    const command = new CopyObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: destinationKey,
+      CopySource: `${R2_BUCKET}/${encodeURIComponent(sourceKey)}`,
+    });
+
+    await client.send(command);
+    return { success: true };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to copy file";
     return { success: false, error: message };
   }
 }

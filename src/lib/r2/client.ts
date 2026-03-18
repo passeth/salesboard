@@ -24,3 +24,7 @@ export const R2_PUBLIC_URL =
 export function getContentUrl(contentSlug: string, fileName: string): string {
   return `${R2_PUBLIC_URL}/contents/${contentSlug}/${fileName}`;
 }
+
+export function getProductImageUrl(sku: string, fileName: string): string {
+  return `${R2_PUBLIC_URL}/products/${sku}/${fileName}`;
+}
