@@ -469,6 +469,11 @@ export function BuyerProductsGrid({
                             next.set(product.id, e.target.value);
                             setEditingQty(next);
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.currentTarget.blur();
+                            }
+                          }}
                           onBlur={() => handleQtyBlur(product)}
                           className={cn(
                             "w-20 h-8 text-right tabular-nums",

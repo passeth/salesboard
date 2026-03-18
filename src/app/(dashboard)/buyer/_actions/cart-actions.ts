@@ -12,6 +12,18 @@ type CartItem = {
   unit_price: number | null;
 };
 
+async function getOrgCurrency(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("organizations")
+    .select("currency_code")
+    .eq("id", orgId)
+    .single();
+  return data?.currency_code ?? "USD";
+}
+
 async function getOrCreateDraft(
   supabase: Awaited<ReturnType<typeof createClient>>,
   orgId: string,
@@ -28,13 +40,18 @@ async function getOrCreateDraft(
 
   if (existing) return existing.id;
 
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const { count } = await supabase
-    .from("orders")
-    .select("*", { count: "exact", head: true })
-    .ilike("order_no", `ORD-${today}%`);
-  const seq = String((count ?? 0) + 1).padStart(4, "0");
-  const orderNo = `ORD-${today}-${seq}`;
+  const [currencyCode, orderNo] = await Promise.all([
+    getOrgCurrency(supabase, orgId),
+    (async () => {
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      const { count } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .ilike("order_no", `ORD-${today}%`);
+      const seq = String((count ?? 0) + 1).padStart(4, "0");
+      return `ORD-${today}-${seq}`;
+    })(),
+  ]);
 
   const { data: order, error } = await supabase
     .from("orders")
@@ -45,7 +62,7 @@ async function getOrCreateDraft(
       requested_by_user_id: userId,
       sales_owner_user_id: SYSTEM_ADMIN_ID,
       status: "draft",
-      currency_code: "USD",
+      currency_code: currencyCode,
       metadata_json: {},
     })
     .select("id")

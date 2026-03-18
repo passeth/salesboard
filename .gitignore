@@ -5,3 +5,7 @@ node_modules/
 .DS_Store
 *.tsbuildinfo
 .vercel
+
+# Test screenshots
+accounts-performance-tab.png
+accounts-pricing-tab.png

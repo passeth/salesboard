@@ -7,6 +7,18 @@ import { redirect } from "next/navigation";
 
 const SYSTEM_ADMIN_ID = "1ffa6f06-6798-442c-aa59-5dfbf0c0f89a";
 
+async function getOrgCurrency(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("organizations")
+    .select("currency_code")
+    .eq("id", orgId)
+    .single();
+  return data?.currency_code ?? "USD";
+}
+
 type OrderItemInput = {
   product_id: string;
   requested_qty: number;
@@ -81,7 +93,10 @@ export async function createAndSubmitOrder(formData: CreateAndSubmitOrderInput) 
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid order data");
   }
 
-  const orderNo = await generateOrderNo(supabase);
+  const [orderNo, currencyCode] = await Promise.all([
+    generateOrderNo(supabase),
+    getOrgCurrency(supabase, formData.ordering_org_id),
+  ]);
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -92,7 +107,7 @@ export async function createAndSubmitOrder(formData: CreateAndSubmitOrderInput) 
       requested_by_user_id: user.id,
       sales_owner_user_id: SYSTEM_ADMIN_ID,
       status: "submitted",
-      currency_code: "KRW",
+      currency_code: currencyCode,
       requested_delivery_date: formData.requested_delivery_date,
       submitted_at: new Date().toISOString(),
       metadata_json: {
@@ -158,7 +173,10 @@ export async function saveDraft(formData: SaveDraftInput) {
 
     if (updateError) throw updateError;
   } else {
-    const orderNo = await generateOrderNo(supabase);
+    const [orderNo, currencyCode] = await Promise.all([
+      generateOrderNo(supabase),
+      getOrgCurrency(supabase, formData.ordering_org_id),
+    ]);
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -169,7 +187,7 @@ export async function saveDraft(formData: SaveDraftInput) {
         requested_by_user_id: user.id,
         sales_owner_user_id: SYSTEM_ADMIN_ID,
         status: "draft",
-        currency_code: "KRW",
+        currency_code: currencyCode,
         requested_delivery_date: formData.requested_delivery_date,
         metadata_json: {
           ...(formData.memo ? { memo: formData.memo } : {}),
