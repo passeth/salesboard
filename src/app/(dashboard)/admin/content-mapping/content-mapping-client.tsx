@@ -48,6 +48,7 @@ import {
   Trash2,
   Loader2,
   FolderPlus,
+  RefreshCw,
 } from "lucide-react";
 import {
   getContentMappingOverview,
@@ -59,12 +60,14 @@ import {
   uploadContentFiles,
   deleteContentFileAction,
   deleteSlugContents,
+  renameSlugFiles,
 } from "./_actions/mapping-actions";
 import type {
   SlugOverview,
   MappedProduct,
   SerializedR2ContentFile,
   MappingStats,
+  RenameResult,
 } from "./_actions/mapping-actions";
 
 type ContentMappingClientProps = {
@@ -122,6 +125,9 @@ export function ContentMappingClient({
   const [newSlugName, setNewSlugName] = useState("");
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [deletingSlug, setDeletingSlug] = useState(false);
+  const [renamingSlug, setRenamingSlug] = useState(false);
+  const [renamingAll, setRenamingAll] = useState(false);
+  const [renameAllProgress, setRenameAllProgress] = useState<{ current: number; total: number; currentSlug: string } | null>(null);
 
   const filteredSlugs = slugs.filter((s) =>
     s.slug.toLowerCase().includes(slugSearch.toLowerCase())
@@ -327,6 +333,42 @@ export function ContentMappingClient({
     }
   };
 
+  const handleRenameSlugFiles = async () => {
+    if (!selectedSlug) return;
+    setRenamingSlug(true);
+    const result = await renameSlugFiles(selectedSlug);
+    setRenamingSlug(false);
+
+    if (result.success) {
+      alert(`Renamed ${result.renamed} files, skipped ${result.skipped}`);
+    } else {
+      alert(`Renamed ${result.renamed}, failed ${result.failed}: ${result.errors.join(", ")}`);
+    }
+    await refreshFiles();
+  };
+
+  const handleRenameAllSlugs = async () => {
+    setRenamingAll(true);
+    const allSlugs = slugs.map((s) => s.slug);
+    let totalRenamed = 0;
+    let totalSkipped = 0;
+    let totalFailed = 0;
+
+    for (let i = 0; i < allSlugs.length; i++) {
+      setRenameAllProgress({ current: i + 1, total: allSlugs.length, currentSlug: allSlugs[i] });
+      const result = await renameSlugFiles(allSlugs[i]);
+      totalRenamed += result.renamed;
+      totalSkipped += result.skipped;
+      totalFailed += result.failed;
+    }
+
+    setRenamingAll(false);
+    setRenameAllProgress(null);
+    alert(`Complete: renamed ${totalRenamed}, skipped ${totalSkipped}, failed ${totalFailed}`);
+
+    if (selectedSlug) await refreshFiles();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4 rounded-lg border bg-muted/30 px-4 py-3">
@@ -342,6 +384,46 @@ export function ContentMappingClient({
         <span className="text-sm font-medium">
           Unmapped: <span className="text-foreground">{stats.unmapped}</span>
         </span>
+        <div className="ml-auto">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={renamingAll || slugs.length === 0}
+              >
+                {renamingAll ? (
+                  <>
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    {renameAllProgress
+                      ? `${renameAllProgress.currentSlug} (${renameAllProgress.current}/${renameAllProgress.total})`
+                      : "Renaming..."}
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-1 h-4 w-4" />
+                    Rename All Files
+                  </>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Rename all files across all slugs?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will rename files in all {slugs.length} content slugs to follow the naming convention.
+                  Files already following the convention will be skipped.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRenameAllSlugs}>
+                  Rename All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -579,6 +661,38 @@ export function ContentMappingClient({
                 </CardTitle>
                 {selectedSlug && (
                   <div className="flex items-center gap-2">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={files.length === 0 || renamingSlug}
+                        >
+                          {renamingSlug ? (
+                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="mr-1 h-4 w-4" />
+                          )}
+                          Rename
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Rename files in {selectedSlug}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Files will be renamed to {selectedSlug}_category_001.ext format.
+                            Files already following this convention will be skipped.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleRenameSlugFiles}>
+                            Rename Files
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
                     <Dialog
                       open={uploadDialogOpen}
                       onOpenChange={setUploadDialogOpen}

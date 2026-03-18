@@ -110,6 +110,7 @@ export default async function ProductDetailPage({
 
       <BrandContentGallery
         contentSlug={contentSlug}
+        productCode={product.sku}
         files={brandContentFiles}
       />
 

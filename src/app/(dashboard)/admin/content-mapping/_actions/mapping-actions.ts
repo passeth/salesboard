@@ -5,9 +5,11 @@ import {
   listContentSlugs,
   listContentFiles,
   uploadContentFile,
+  copyContentFile,
   deleteContentFile,
   deleteAllContentFiles,
 } from "@/lib/r2/actions";
+import { buildRenamePlan } from "@/lib/r2/rename-utils";
 import type { R2ContentFile } from "@/lib/r2/types";
 
 export type SlugOverview = {
@@ -245,5 +247,76 @@ export async function deleteSlugContents(
       .eq("content_slug", contentSlug);
   }
 
+  return result;
+}
+
+export type RenameResult = {
+  success: boolean;
+  contentSlug: string;
+  renamed: number;
+  skipped: number;
+  failed: number;
+  errors: string[];
+  total: number;
+};
+
+const RENAME_BATCH_SIZE = 5;
+const RENAME_BATCH_DELAY_MS = 200;
+
+export async function renameSlugFiles(
+  contentSlug: string,
+): Promise<RenameResult> {
+  const result: RenameResult = {
+    success: true,
+    contentSlug,
+    renamed: 0,
+    skipped: 0,
+    failed: 0,
+    errors: [],
+    total: 0,
+  };
+
+  const listResult = await listContentFiles(contentSlug);
+  if (!listResult.success || !listResult.files) {
+    return { ...result, success: false, errors: [listResult.error ?? "Failed to list files"] };
+  }
+
+  const plan = buildRenamePlan(contentSlug, listResult.files);
+  result.total = plan.total;
+  result.skipped = plan.toSkip;
+
+  const toProcess = plan.entries.filter((e) => !e.skipped);
+
+  for (let i = 0; i < toProcess.length; i += RENAME_BATCH_SIZE) {
+    const batch = toProcess.slice(i, i + RENAME_BATCH_SIZE);
+
+    const batchResults = await Promise.allSettled(
+      batch.map(async (entry) => {
+        const copyResult = await copyContentFile(entry.oldKey, entry.newKey);
+        if (!copyResult.success) {
+          throw new Error(`Copy failed [${entry.oldFileName}]: ${copyResult.error}`);
+        }
+        const delResult = await deleteContentFile(entry.oldKey);
+        if (!delResult.success) {
+          throw new Error(`Delete failed [${entry.oldFileName}]: ${delResult.error}`);
+        }
+      }),
+    );
+
+    for (const br of batchResults) {
+      if (br.status === "fulfilled") {
+        result.renamed++;
+      } else {
+        result.failed++;
+        result.errors.push(br.reason?.message ?? "Unknown error");
+      }
+    }
+
+    if (i + RENAME_BATCH_SIZE < toProcess.length) {
+      await new Promise((resolve) => setTimeout(resolve, RENAME_BATCH_DELAY_MS));
+    }
+  }
+
+  if (result.failed > 0) result.success = false;
   return result;
 }

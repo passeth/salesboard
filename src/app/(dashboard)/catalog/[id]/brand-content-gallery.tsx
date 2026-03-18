@@ -26,6 +26,7 @@ export interface BrandContentFile {
 
 interface BrandContentGalleryProps {
   contentSlug: string | null;
+  productCode: string;
   files: BrandContentFile[];
 }
 
@@ -92,22 +93,47 @@ function groupByCategory(
   }));
 }
 
-async function downloadSingleFile(file: BrandContentFile) {
-  const res = await fetch(file.publicUrl);
+function proxyUrl(publicUrl: string): string {
+  return `/api/r2-download?url=${encodeURIComponent(publicUrl)}`;
+}
+
+function getExt(fileName: string): string {
+  const dot = fileName.lastIndexOf(".");
+  return dot >= 0 ? fileName.slice(dot) : "";
+}
+
+function buildDownloadName(
+  productCode: string,
+  category: string,
+  index: number,
+  fileName: string,
+): string {
+  const seq = String(index + 1).padStart(3, "0");
+  return `${productCode}_${category}_${seq}${getExt(fileName)}`;
+}
+
+async function downloadSingleFile(file: BrandContentFile, downloadName?: string) {
+  const res = await fetch(proxyUrl(file.publicUrl));
   const blob = await res.blob();
-  saveAs(blob, file.fileName);
+  saveAs(blob, downloadName ?? file.fileName);
 }
 
 async function downloadAsZip(
   files: BrandContentFile[],
-  zipName: string
+  zipName: string,
+  productCode?: string,
+  category?: string,
 ) {
   const zip = new JSZip();
   const results = await Promise.allSettled(
-    files.map(async (f) => {
-      const res = await fetch(f.publicUrl);
+    files.map(async (f, i) => {
+      const res = await fetch(proxyUrl(f.publicUrl));
       const blob = await res.blob();
-      zip.file(f.fileName, blob);
+      const name =
+        productCode && category
+          ? buildDownloadName(productCode, category, i, f.fileName)
+          : f.fileName;
+      zip.file(name, blob);
     })
   );
 
@@ -121,11 +147,13 @@ async function downloadAsZip(
 function Lightbox({
   images,
   currentIndex,
+  productCode,
   onClose,
   onNavigate,
 }: {
   images: BrandContentFile[];
   currentIndex: number;
+  productCode: string;
   onClose: () => void;
   onNavigate: (index: number) => void;
 }) {
@@ -170,13 +198,13 @@ function Lightbox({
       )}
 
       <div
-        className="flex max-h-[90vh] max-w-[90vw] flex-col items-center gap-3"
+        className="flex max-h-[90vh] w-full max-w-[600px] flex-col items-center gap-3 overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <img
           src={file.publicUrl}
           alt={file.fileName}
-          className="max-h-[80vh] max-w-[85vw] rounded-lg object-contain"
+          className="w-full shrink-0 rounded-lg object-contain"
         />
         <div className="flex items-center gap-3 text-white/80">
           <span className="text-sm">{file.fileName}</span>
@@ -191,7 +219,8 @@ function Lightbox({
             className="rounded-md p-1.5 transition-colors hover:bg-white/10"
             onClick={(e) => {
               e.stopPropagation();
-              downloadSingleFile(file);
+              const name = buildDownloadName(productCode, file.category, currentIndex, file.fileName);
+              downloadSingleFile(file, name);
             }}
           >
             <Download className="size-4" />
@@ -219,11 +248,13 @@ function CategorySection({
   category,
   files,
   totalSize,
+  productCode,
   onImageClick,
 }: {
   category: string;
   files: BrandContentFile[];
   totalSize: number;
+  productCode: string;
   onImageClick: (file: BrandContentFile) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
@@ -233,9 +264,10 @@ function CategorySection({
     setDownloading(true);
     try {
       if (files.length === 1) {
-        await downloadSingleFile(files[0]);
+        const name = buildDownloadName(productCode, category, 0, files[0].fileName);
+        await downloadSingleFile(files[0], name);
       } else {
-        await downloadAsZip(files, `${category}.zip`);
+        await downloadAsZip(files, `${productCode}_${category}.zip`, productCode, category);
       }
     } finally {
       setDownloading(false);
@@ -311,7 +343,9 @@ function CategorySection({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      downloadSingleFile(file);
+                      const idx = files.indexOf(file);
+                      const name = buildDownloadName(productCode, category, idx, file.fileName);
+                      downloadSingleFile(file, name);
                     }}
                     className="absolute right-2 top-2 rounded-md bg-background/80 p-1.5 opacity-0 transition-opacity hover:bg-background group-hover:opacity-100"
                     title="Download"
@@ -341,6 +375,7 @@ function CategorySection({
 
 export function BrandContentGallery({
   contentSlug,
+  productCode,
   files,
 }: BrandContentGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -389,6 +424,7 @@ export function BrandContentGallery({
               category={group.category}
               files={group.files}
               totalSize={group.totalSize}
+              productCode={productCode}
               onImageClick={handleImageClick}
             />
           ))}
@@ -399,6 +435,7 @@ export function BrandContentGallery({
         <Lightbox
           images={imageFiles}
           currentIndex={lightboxIndex}
+          productCode={productCode}
           onClose={() => setLightboxIndex(null)}
           onNavigate={setLightboxIndex}
         />
