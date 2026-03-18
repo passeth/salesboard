@@ -16,7 +16,9 @@ import { ProductLogistics } from "./product-logistics";
 import { ProductMarketTabs } from "./product-market-tabs";
 import { AddToCartButton } from "./add-to-cart-button";
 import { BrandContentGallery } from "./brand-content-gallery";
-import { Package } from "lucide-react";
+import { ProductDocuments } from "./product-documents";
+import { listProductImages } from "../_actions/product-image-actions";
+import { ProductImageManager } from "./product-image-manager";
 import type { ProductMarketContentRow } from "@/types/database";
 
 export default async function ProductDetailPage({
@@ -44,6 +46,22 @@ export default async function ProductDetailPage({
 
   const contentSlug = masterData?.content_slug ?? null;
 
+  const productImagesResult = await listProductImages(product.sku);
+  const allImages = productImagesResult.success
+    ? (productImagesResult.images ?? [])
+    : [];
+
+  const barcodePattern = new RegExp(
+    `^${product.sku}_\\d{13,}\\.(png|jpg|jpeg|webp)$`,
+    "i",
+  );
+  const productImages = allImages.filter(
+    (img) => !barcodePattern.test(img.fileName),
+  );
+  const barcodeImage = allImages.find((img) =>
+    barcodePattern.test(img.fileName),
+  ) ?? null;
+
   let brandContentFiles: Array<{
     key: string;
     fileName: string;
@@ -66,6 +84,19 @@ export default async function ProductDetailPage({
   const currentUser = await getCurrentUser();
   const userRole = currentUser?.role ?? null;
 
+  const { data: productDocs } = await supabase
+    .from("documents")
+    .select("id, document_type, file_name, updated_at, metadata_json")
+    .eq("owner_type", "product")
+    .eq("owner_id", id)
+    .in("document_type", ["ingredients_en", "formula_breakdown", "inci_summary"])
+    .order("document_type");
+
+  const docList = productDocs ?? [];
+  const lastSyncedAt = docList.length > 0
+    ? docList.reduce((latest, d) => (d.updated_at > latest ? d.updated_at : latest), docList[0].updated_at)
+    : null;
+
   return (
     <div className="space-y-6">
       <Breadcrumb>
@@ -81,25 +112,18 @@ export default async function ProductDetailPage({
       </Breadcrumb>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-8">
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.name}
-              width={400}
-              height={400}
-              className="max-h-96 w-auto rounded-lg object-contain"
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-3 text-muted-foreground">
-              <Package className="size-16" />
-              <span className="text-sm">No image available</span>
-            </div>
-          )}
+        <div className="flex justify-center px-4">
+          <ProductImageManager
+            productId={id}
+            sku={product.sku}
+            primaryImageUrl={product.image_url}
+            images={productImages}
+            isAdmin={userRole === "admin"}
+          />
         </div>
 
         <div className="space-y-6">
-          <ProductInfo product={product} />
+          <ProductInfo product={product} barcodeImageUrl={barcodeImage?.url ?? null} />
           <ProductLogistics product={product} />
         </div>
       </div>
@@ -107,6 +131,10 @@ export default async function ProductDetailPage({
       <ProductMarketTabs
         marketContents={(marketContents ?? []) as ProductMarketContentRow[]}
       />
+
+      {docList.length > 0 && (
+        <ProductDocuments documents={docList} lastSyncedAt={lastSyncedAt} />
+      )}
 
       <BrandContentGallery
         contentSlug={contentSlug}
