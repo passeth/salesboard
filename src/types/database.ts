@@ -227,6 +227,48 @@ export type MesLotReceiptRow = {
   created_at: string;
 };
 
+export type AccountAssignmentRow = {
+  id: string;
+  buyer_org_id: string;
+  vendor_org_id: string | null;
+  sales_user_id: string;
+  logistics_user_id: string | null;
+  commission_type: "rate" | "fixed";
+  commission_value: number;
+  effective_from: string;
+  effective_to: string | null;
+  status: "active" | "inactive";
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProductBasePriceRow = {
+  id: string;
+  product_id: string;
+  base_price: number;
+  currency_code: string;
+  effective_from: string;
+  effective_to: string | null;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type BuyerProductPriceRow = {
+  id: string;
+  buyer_org_id: string;
+  product_id: string;
+  settlement_price: number;
+  final_price: number;
+  currency_code: string;
+  effective_from: string;
+  effective_to: string | null;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type InventoryLotRow = {
   id: string;
   source_system: "mes" | "erp" | "manual";
