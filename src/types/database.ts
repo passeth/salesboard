@@ -190,13 +190,14 @@ export type DocumentRow = {
   id: string;
   owner_type: "product" | "product_market_content" | "order" | "invoice" | "shipment" | "shipment_pallet";
   owner_id: string;
-  document_type: "invoice" | "packing_list" | "coo" | "shipping_mark" | "tracking_doc" | "product_sheet" | "other";
+  document_type: "invoice" | "packing_list" | "coo" | "shipping_mark" | "tracking_doc" | "product_sheet" | "other" | "ingredients_en" | "formula_breakdown" | "inci_summary" | "msds" | "coa";
   file_name: string;
   file_url: string;
   version_no: number;
   issued_at: string | null;
   metadata_json: Record<string, unknown>;
   created_at: string;
+  updated_at: string;
   is_buyer_visible: boolean;
 };
 
