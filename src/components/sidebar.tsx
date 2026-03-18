@@ -57,6 +57,7 @@ const NAV_SECTIONS_BY_ROLE: Record<UserRole, NavSection[]> = {
       items: [
         { href: "/sales", label: "Dashboard", icon: Home },
         { href: "/sales/orders", label: "Order Review", icon: FileText },
+        { href: "/sales/accounts", label: "Accounts", icon: Building2 },
         { href: "/catalog", label: "Catalog", icon: PackageSearch },
       ],
     },
@@ -94,6 +95,7 @@ const NAV_SECTIONS_BY_ROLE: Record<UserRole, NavSection[]> = {
       items: [
         { href: "/sales", label: "Sales Dashboard", icon: Home },
         { href: "/sales/orders", label: "Order Review", icon: FileText },
+        { href: "/sales/accounts", label: "Accounts", icon: Building2 },
       ],
     },
     {

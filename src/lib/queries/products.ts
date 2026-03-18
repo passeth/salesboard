@@ -261,7 +261,7 @@ export async function getProductCatalogForBuyer(
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   const threeMonthsCutoff = threeMonthsAgo.toISOString();
 
-  const [productsResult, historyResult, shippedResult, draftResult] = await Promise.all([
+  const [productsResult, historyResult, shippedResult, draftResult, buyerPricesResult] = await Promise.all([
     productsQuery.order("name", { ascending: true }),
 
     supabase
@@ -284,6 +284,12 @@ export async function getProductCatalogForBuyer(
       .eq("status", "draft")
       .order("created_at", { ascending: false })
       .limit(1),
+
+    supabase
+      .from("buyer_product_prices")
+      .select("product_id, final_price")
+      .eq("buyer_org_id", orgId)
+      .is("effective_to", null),
   ]);
 
   if (productsResult.error) return { data: [], error: productsResult.error };
@@ -291,8 +297,14 @@ export async function getProductCatalogForBuyer(
   type ItemTuple = { product_id: string; unit_price: number | null; requested_qty: number };
   type ShippedTuple = { product_id: string; final_qty: number | null; requested_qty: number };
   type CartTuple = { product_id: string; requested_qty: number };
+  type BuyerPriceTuple = { product_id: string; final_price: number };
 
-  const lastPriceMap = new Map<string, number>();
+  const buyerPriceMap = new Map<string, number>();
+  for (const bp of (buyerPricesResult.data ?? []) as BuyerPriceTuple[]) {
+    buyerPriceMap.set(bp.product_id, bp.final_price);
+  }
+
+  const orderPriceMap = new Map<string, number>();
   const tradedProducts = new Set<string>();
 
   const sortedOrders = [...(historyResult.data ?? [])].sort(
@@ -301,8 +313,8 @@ export async function getProductCatalogForBuyer(
   for (const order of sortedOrders) {
     for (const item of (order.order_items ?? []) as ItemTuple[]) {
       tradedProducts.add(item.product_id);
-      if (!lastPriceMap.has(item.product_id) && item.unit_price != null) {
-        lastPriceMap.set(item.product_id, item.unit_price);
+      if (!orderPriceMap.has(item.product_id) && item.unit_price != null) {
+        orderPriceMap.set(item.product_id, item.unit_price);
       }
     }
   }
@@ -337,7 +349,7 @@ export async function getProductCatalogForBuyer(
     units_per_case: p.units_per_case,
     cbm: p.cbm,
     gross_weight: p.gross_weight,
-    last_unit_price: lastPriceMap.get(p.id) ?? null,
+    last_unit_price: buyerPriceMap.get(p.id) ?? orderPriceMap.get(p.id) ?? null,
     shipped_qty_3m: shipped3mMap.get(p.id) ?? 0,
     cart_qty: cartMap.get(p.id) ?? 0,
     has_trade_history: tradedProducts.has(p.id),
