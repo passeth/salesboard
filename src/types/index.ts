@@ -45,6 +45,7 @@ export const ORDER_STATUS_CONFIG: Record<
 import type {
   AccountAssignmentRow,
   BuyerProductPriceRow,
+  ContactRow,
   InventoryLotRow,
   OrderItemRow,
   OrderRow,
@@ -61,27 +62,35 @@ export type OrderItemStatus =
   | "rejected"
   | "cancelled";
 
-export type OrgType = "internal" | "vendor" | "buyer_country" | "buyer_company" | "buyer_ship_to";
+export type OrgType = "internal" | "vendor" | "buyer_company" | "buyer" | "buyer_ship_to";
 
 export type ViewMode = "grid" | "list";
 
 export type {
   AccountAssignmentRow,
   BuyerProductPriceRow,
+  ContactRow,
   ProductBasePriceRow,
   ProductRow,
   OrganizationRow,
   OrderRow,
   OrderItemRow,
   InventoryLotRow,
+  BuyerSuppliedProductRow,
   MesLotReceiptRow,
   OrderEventRow,
   InvoiceRow,
   ShipmentRow,
   OrderPackingDraftRow,
+  CommissionRow,
   DocumentRow,
   ProductMarketContentRow,
 } from "./database";
+
+/** Ship-to location with its default consignee contact */
+export type ShipToWithContact = OrganizationRow & {
+  consignee_contact: ContactRow | null;
+};
 
 export type CatalogProduct = Pick<
   ProductRow,
@@ -89,7 +98,7 @@ export type CatalogProduct = Pick<
 >;
 
 export type OrderWithOrg = OrderRow & {
-  organization: Pick<OrganizationRow, "name" | "code">;
+  organization: Pick<OrganizationRow, "name" | "code" | "currency_code">;
   ship_to?: Pick<OrganizationRow, "name" | "code"> | null;
 };
 
@@ -179,6 +188,7 @@ export type BuyerCatalogProduct = Pick<
   cart_qty: number;
   /** Whether this product has any prior order history with this buyer */
   has_trade_history: boolean;
+  supply_type: "trading" | "pb" | "hidden" | null;
 };
 
 /** Buyer's draft order (cart) summary */
@@ -218,8 +228,12 @@ export type SalesAccountSummary = {
   vendor_org_id: string | null;
   /** Assigned sales user name */
   sales_user_name: string | null;
-  /** Total order count */
+  /** Total order count (excl. draft/cancelled) */
   order_count: number;
+  submitted_count: number;
+  review_count: number;
+  confirmed_count: number;
+  completed_count: number;
   /** Total revenue (sum of final_qty * unit_price) */
   total_revenue: number;
   /** Last order date */
@@ -250,6 +264,10 @@ export type AccountPricingRow = {
   commission_amount: number;
   /** Has active orders for this product */
   has_orders: boolean;
+  /** Supply type for this buyer: trading, pb, hidden, or null (available) */
+  supply_type: "trading" | "pb" | "hidden" | null;
+  /** Whether the product itself is active */
+  product_status: "active" | "inactive";
 };
 
 /** Account performance stats */

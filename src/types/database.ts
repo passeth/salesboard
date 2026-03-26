@@ -1,7 +1,7 @@
 export type OrganizationRow = {
   id: string;
   parent_org_id: string | null;
-  org_type: "internal" | "vendor" | "buyer_country" | "buyer_company" | "buyer_ship_to";
+  org_type: "internal" | "vendor" | "buyer_company" | "buyer" | "buyer_ship_to";
   code: string | null;
   name: string;
   country_code: string | null;
@@ -156,6 +156,21 @@ export type InvoiceRow = {
   updated_at: string;
 };
 
+export type ContactRow = {
+  id: string;
+  org_id: string;
+  contact_type: "exporter" | "consignee" | "manufacturer" | "other";
+  name: string;
+  address: string | null;
+  tel: string | null;
+  fax: string | null;
+  email: string | null;
+  is_default: boolean;
+  status: "active" | "inactive";
+  created_at: string;
+  updated_at: string;
+};
+
 export type ShipmentRow = {
   id: string;
   shipment_no: string;
@@ -169,6 +184,19 @@ export type ShipmentRow = {
   eta: string | null;
   shipping_status: "preparing" | "packed" | "shipped" | "in_transit" | "delivered";
   origin_country_code: string | null;
+  exporter_contact_id: string | null;
+  consignee_contact_id: string | null;
+  manufacturer: string | null;
+  shipping_port: string | null;
+  destination: string | null;
+  vessel_flight: string | null;
+  departure_date: string | null;
+  payment_term: string | null;
+  main_item: string | null;
+  hs_code: string | null;
+  commodity_desc: string | null;
+  exporter_snapshot: Record<string, unknown> | null;
+  consignee_snapshot: Record<string, unknown> | null;
   metadata_json: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -270,6 +298,15 @@ export type BuyerProductPriceRow = {
   updated_at: string;
 };
 
+export type BuyerSuppliedProductRow = {
+  id: string;
+  buyer_org_id: string;
+  product_id: string;
+  supply_type: "trading" | "pb" | "hidden";
+  is_pb_protected: boolean;
+  created_at: string;
+};
+
 export type InventoryLotRow = {
   id: string;
   source_system: "mes" | "erp" | "manual";
@@ -286,4 +323,20 @@ export type InventoryLotRow = {
   snapshot_at: string;
   last_synced_at: string;
   metadata_json: Record<string, unknown>;
+};
+
+export type CommissionRow = {
+  id: string;
+  order_id: string;
+  invoice_id: string | null;
+  vendor_org_id: string;
+  commission_type: string;
+  commission_value: number;
+  commission_amount: number;
+  status: string;
+  payable_date: string | null;
+  paid_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 };

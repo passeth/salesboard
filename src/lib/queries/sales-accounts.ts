@@ -32,7 +32,7 @@ export async function getSalesAccounts(
 
   if (orgIds.length === 0) return { data: [], error: null };
 
-  const [assignmentsResult, ordersResult, pricesResult, countriesResult] = await Promise.all([
+  const [assignmentsResult, ordersResult, pricesResult] = await Promise.all([
     supabase
       .from("account_assignments")
       .select("buyer_org_id, vendor_org_id, sales_user_id")
@@ -40,18 +40,14 @@ export async function getSalesAccounts(
       .eq("status", "active"),
     supabase
       .from("orders")
-      .select("ordering_org_id, id, created_at")
+      .select("ordering_org_id, id, created_at, status")
       .in("ordering_org_id", orgIds)
-      .not("status", "in", '("draft","cancelled")'),
+      .neq("status", "cancelled"),
     supabase
       .from("buyer_product_prices")
       .select("buyer_org_id")
       .in("buyer_org_id", orgIds)
       .is("effective_to", null),
-    supabase
-      .from("organizations")
-      .select("id, name")
-      .eq("org_type", "buyer_country"),
   ]);
 
   const assignmentMap = new Map<string, { vendor_org_id: string | null; sales_user_id: string }>();
@@ -81,7 +77,12 @@ export async function getSalesAccounts(
   const salesUserNameMap = new Map<string, string>();
   for (const u of salesUserResult.data ?? []) salesUserNameMap.set(u.id, u.name);
 
-  type OrderTuple = { ordering_org_id: string; id: string; created_at: string };
+  const SUBMITTED_STATUSES = new Set(["submitted"]);
+  const REVIEW_STATUSES = new Set(["vendor_review", "sales_review", "needs_buyer_decision"]);
+  const CONFIRMED_STATUSES = new Set(["confirmed", "invoiced", "partially_shipped", "shipped"]);
+  const COMPLETED_STATUSES = new Set(["completed"]);
+
+  type OrderTuple = { ordering_org_id: string; id: string; created_at: string; status: string };
   const ordersByOrg = new Map<string, OrderTuple[]>();
   for (const o of (ordersResult.data ?? []) as OrderTuple[]) {
     const arr = ordersByOrg.get(o.ordering_org_id) ?? [];
@@ -94,8 +95,7 @@ export async function getSalesAccounts(
     priceCountMap.set(p.buyer_org_id, (priceCountMap.get(p.buyer_org_id) ?? 0) + 1);
   }
 
-  const countryNameMap = new Map<string, string>();
-  for (const c of countriesResult.data ?? []) countryNameMap.set(c.id, c.name);
+  const countryNames = new Intl.DisplayNames(["ko"], { type: "region" });
 
   let results: SalesAccountSummary[] = orgList.map((org) => {
     const assignment = assignmentMap.get(org.id);
@@ -111,11 +111,15 @@ export async function getSalesAccounts(
       country_code: org.country_code,
       currency_code: org.currency_code,
       status: org.status as "active" | "inactive",
-      country_name: org.parent_org_id ? (countryNameMap.get(org.parent_org_id) ?? null) : null,
+      country_name: org.country_code ? (countryNames.of(org.country_code) ?? org.country_code) : null,
       vendor_name: assignment?.vendor_org_id ? (vendorNameMap.get(assignment.vendor_org_id) ?? null) : null,
       vendor_org_id: assignment?.vendor_org_id ?? null,
       sales_user_name: assignment?.sales_user_id ? (salesUserNameMap.get(assignment.sales_user_id) ?? null) : null,
-      order_count: orders.length,
+      order_count: orders.filter((o) => o.status !== "draft").length,
+      submitted_count: orders.filter((o) => SUBMITTED_STATUSES.has(o.status)).length,
+      review_count: orders.filter((o) => REVIEW_STATUSES.has(o.status)).length,
+      confirmed_count: orders.filter((o) => CONFIRMED_STATUSES.has(o.status)).length,
+      completed_count: orders.filter((o) => COMPLETED_STATUSES.has(o.status)).length,
       total_revenue: 0,
       last_order_date: lastOrder?.created_at ?? null,
       priced_product_count: priceCountMap.get(org.id) ?? 0,
@@ -223,11 +227,10 @@ export async function getAccountPricing(
   supabase: SupabaseClient,
   orgId: string,
 ): Promise<{ data: AccountPricingRow[]; error: unknown }> {
-  const [productsResult, pricesResult, basePricesResult, orderedProductsResult] = await Promise.all([
+  const [productsResult, pricesResult, basePricesResult, orderedProductsResult, suppliedResult] = await Promise.all([
     supabase
       .from("products")
-      .select("id, sku, name, brand, image_url")
-      .eq("status", "active")
+      .select("id, sku, name, brand, image_url, status")
       .order("name"),
     supabase
       .from("buyer_product_prices")
@@ -243,6 +246,10 @@ export async function getAccountPricing(
       .select("order_items(product_id)")
       .eq("ordering_org_id", orgId)
       .not("status", "in", '("draft","cancelled")'),
+    supabase
+      .from("buyer_supplied_products")
+      .select("product_id, supply_type")
+      .eq("buyer_org_id", orgId),
   ]);
 
   if (productsResult.error) return { data: [], error: productsResult.error };
@@ -264,7 +271,12 @@ export async function getAccountPricing(
     }
   }
 
-  type ProductTuple = { id: string; sku: string; name: string; brand: string | null; image_url: string | null };
+  const suppliedMap = new Map<string, string>();
+  for (const sp of (suppliedResult.data ?? []) as { product_id: string; supply_type: string }[]) {
+    suppliedMap.set(sp.product_id, sp.supply_type);
+  }
+
+  type ProductTuple = { id: string; sku: string; name: string; brand: string | null; image_url: string | null; status: string };
 
   const rows: AccountPricingRow[] = (productsResult.data as ProductTuple[]).map((p) => {
     const price = priceMap.get(p.id);
@@ -286,6 +298,8 @@ export async function getAccountPricing(
       price_id: price?.id ?? null,
       commission_amount: settlement !== null && final_ !== null ? final_ - settlement : 0,
       has_orders: orderedProductIds.has(p.id),
+      supply_type: (suppliedMap.get(p.id) as "trading" | "pb" | "hidden") ?? null,
+      product_status: p.status as "active" | "inactive",
     };
   });
 
@@ -421,4 +435,17 @@ export async function getVendorOrganizations(
     .order("name");
 
   return (data ?? []) as { id: string; name: string; code: string | null }[];
+}
+
+export async function getBuyerOrgList(
+  supabase: SupabaseClient,
+): Promise<{ id: string; name: string }[]> {
+  const { data } = await supabase
+    .from("organizations")
+    .select("id, name")
+    .eq("org_type", "buyer_company")
+    .eq("status", "active")
+    .order("name");
+
+  return (data ?? []) as { id: string; name: string }[];
 }
