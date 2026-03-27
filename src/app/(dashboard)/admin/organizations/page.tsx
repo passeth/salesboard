@@ -70,6 +70,8 @@ export default async function AdminOrganizationsPage() {
       id: org.id,
       name: org.name,
       code: org.code,
+      org_type: org.org_type as "buyer_company" | "buyer",
+      parent_name: org.parent_org_id ? (buyerCompanyNameMap.get(org.parent_org_id) ?? null) : null,
       country_name: org.country_code ? (countryNames.of(org.country_code) ?? org.country_code) : null,
       ship_to_count: shipToCountMap.get(org.id) ?? 0,
       vendor_name: assignment?.vendor_org_id ? (vendorNameMap.get(assignment.vendor_org_id) ?? null) : null,

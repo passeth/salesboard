@@ -40,6 +40,8 @@ export type BuyerRow = {
   id: string;
   name: string;
   code: string | null;
+  org_type: "buyer_company" | "buyer";
+  parent_name: string | null;
   country_name: string | null;
   ship_to_count: number;
   vendor_name: string | null;
@@ -73,16 +75,44 @@ export function BuyersTab({ buyers, allOrgs }: BuyersTabProps) {
   const [mergeTargetId, setMergeTargetId] = useState("");
   const [mergeResult, setMergeResult] = useState<MergeResult | null>(null);
 
+  // Build hierarchical list: buyer_company followed by its sub-buyers (indented)
+  const hierarchicalBuyers = useMemo(() => {
+    const companies = buyers.filter((b) => b.org_type === "buyer_company");
+    const subBuyers = buyers.filter((b) => b.org_type === "buyer");
+    const subByParent = new Map<string, BuyerRow[]>();
+    for (const sb of subBuyers) {
+      if (sb.parent_name) {
+        const parent = companies.find((c) => c.name === sb.parent_name);
+        if (parent) {
+          const arr = subByParent.get(parent.id) ?? [];
+          arr.push(sb);
+          subByParent.set(parent.id, arr);
+        }
+      }
+    }
+    const result: BuyerRow[] = [];
+    for (const c of companies) {
+      result.push(c);
+      const children = subByParent.get(c.id) ?? [];
+      for (const child of children) result.push(child);
+    }
+    // Orphan sub-buyers (no matching parent)
+    for (const sb of subBuyers) {
+      if (!result.includes(sb)) result.push(sb);
+    }
+    return result;
+  }, [buyers]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return buyers;
+    if (!search.trim()) return hierarchicalBuyers;
     const q = search.toLowerCase();
-    return buyers.filter(
+    return hierarchicalBuyers.filter(
       (b) =>
         b.name.toLowerCase().includes(q) ||
         b.code?.toLowerCase().includes(q) ||
         b.country_name?.toLowerCase().includes(q),
     );
-  }, [buyers, search]);
+  }, [hierarchicalBuyers, search]);
 
   const selectedBuyers = useMemo(
     () => buyers.filter((b) => selected.has(b.id)),
@@ -232,11 +262,19 @@ export function BuyersTab({ buyers, allOrgs }: BuyersTabProps) {
               </TableRow>
             ) : (
               filtered.map((b) => (
-                <TableRow key={b.id}>
+                <TableRow key={b.id} className={b.org_type === "buyer" ? "bg-muted/30" : ""}>
                   <TableCell>
                     <Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggle(b.id)} />
                   </TableCell>
-                  <TableCell className="font-medium">{b.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className={b.org_type === "buyer" ? "pl-6 flex items-center gap-1.5" : "flex items-center gap-1.5"}>
+                      {b.org_type === "buyer" && <span className="text-muted-foreground">└</span>}
+                      {b.name}
+                      <Badge variant="outline" className="text-[10px] px-1 py-0 font-normal">
+                        {b.org_type === "buyer_company" ? "Company" : "Sub"}
+                      </Badge>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{b.code ?? "-"}</TableCell>
                   <TableCell>{b.country_name ?? "-"}</TableCell>
                   <TableCell className="text-center">{b.ship_to_count}</TableCell>
