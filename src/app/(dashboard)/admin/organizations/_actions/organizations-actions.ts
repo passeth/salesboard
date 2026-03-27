@@ -27,9 +27,10 @@ export async function adminChangeParent(ids: string[], newParentId: string | nul
   if (ids.length === 0) throw new Error("No organizations selected");
 
   const supabase = await createClient();
+  const orgType: OrgType = newParentId ? "buyer" : "buyer_company";
   const { error } = await supabase
     .from("organizations")
-    .update({ parent_org_id: newParentId })
+    .update({ parent_org_id: newParentId, org_type: orgType })
     .in("id", ids);
 
   if (error) throw new Error("Failed to change parent organization");

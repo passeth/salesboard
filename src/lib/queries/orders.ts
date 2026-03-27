@@ -3,6 +3,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 type OrderFilters = {
   status?: string;
+  statuses?: string[];
   fromDate?: string;
   toDate?: string;
   sort?: string;
@@ -36,15 +37,16 @@ export async function getBuyerOrders(supabase: SupabaseClient, orgId: string | n
 
   let query = supabase
     .from("orders")
-    .select("*, organization:ordering_org_id(name, code), ship_to:ship_to_org_id(name, code)", { count: "exact" })
-    .neq("status", "draft")
+    .select("*, organization:ordering_org_id(name, code, currency_code, parent_org_id, org_type, parent:parent_org_id(name, code)), ship_to:ship_to_org_id(name, code)", { count: "exact" })
     .order(filters?.sort ?? "created_at", { ascending: filters?.sortDir === "asc" });
 
   if (orgId) {
     query = query.eq("ordering_org_id", orgId);
   }
 
-  if (filters?.status) {
+  if (filters?.statuses && filters.statuses.length > 0) {
+    query = query.in("status", filters.statuses);
+  } else if (filters?.status) {
     query = query.eq("status", filters.status);
   }
 
@@ -86,7 +88,7 @@ export async function getBuyerOrderCountsByStatus(
 export async function getOrderById(supabase: SupabaseClient, id: string) {
   const { data, error } = await supabase
     .from("orders")
-    .select("*, organization:ordering_org_id(name, code), ship_to:ship_to_org_id(name, code)")
+    .select("*, organization:ordering_org_id(name, code, currency_code), ship_to:ship_to_org_id(name, code)")
     .eq("id", id)
     .single();
 

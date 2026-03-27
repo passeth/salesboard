@@ -98,7 +98,11 @@ export type CatalogProduct = Pick<
 >;
 
 export type OrderWithOrg = OrderRow & {
-  organization: Pick<OrganizationRow, "name" | "code" | "currency_code">;
+  organization: Pick<OrganizationRow, "name" | "code" | "currency_code"> & {
+    parent_org_id?: string | null;
+    org_type?: string;
+    parent?: Pick<OrganizationRow, "name" | "code"> | null;
+  };
   ship_to?: Pick<OrganizationRow, "name" | "code"> | null;
 };
 

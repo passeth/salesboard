@@ -120,7 +120,9 @@ export function BuyersTab({ buyers, allOrgs }: BuyersTabProps) {
   );
 
   const filteredParentOrgs = useMemo(() => {
-    let candidates = allOrgs.filter((o) => !selected.has(o.id));
+    let candidates = allOrgs.filter(
+      (o) => !selected.has(o.id) && (o.org_type === "buyer_company" || o.org_type === "buyer"),
+    );
     if (parentSearch.trim()) {
       const q = parentSearch.toLowerCase();
       candidates = candidates.filter(

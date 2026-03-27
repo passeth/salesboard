@@ -48,8 +48,33 @@ export const ordersColumns: ColumnDef<OrderWithOrg>[] = [
     id: "organization_name",
     header: "Organization",
     enableSorting: false,
-    accessorFn: (row) => row.organization?.name ?? "-",
-    cell: ({ row }) => row.original.organization?.name ?? "-",
+    accessorFn: (row) => {
+      const org = row.organization;
+      if (!org) return "-";
+      if (org.org_type === "buyer" && org.parent) return org.parent.name;
+      return org.name;
+    },
+    cell: ({ row }) => {
+      const org = row.original.organization;
+      if (!org) return "-";
+      if (org.org_type === "buyer" && org.parent) return org.parent.name;
+      return org.name;
+    },
+  },
+  {
+    id: "sub_buyer_name",
+    header: "Sub-buyer",
+    enableSorting: false,
+    accessorFn: (row) => {
+      const org = row.organization;
+      if (org?.org_type === "buyer") return org.name;
+      return "-";
+    },
+    cell: ({ row }) => {
+      const org = row.original.organization;
+      if (org?.org_type === "buyer") return org.name;
+      return "-";
+    },
   },
   {
     id: "ship_to_name",
