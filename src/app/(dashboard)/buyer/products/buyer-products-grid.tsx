@@ -922,8 +922,8 @@ export function BuyerProductsGrid({
                       <TableCell className="text-sm text-right tabular-nums">
                         {(() => {
                           const qty = effectiveQty;
-                          const upc = product.units_per_case;
-                          if (qty > 0 && upc) {
+                          const upc = product.units_per_case ?? 1;
+                          if (qty > 0) {
                             return (
                               <span className="font-medium">{(qty * upc).toLocaleString()}</span>
                             );
