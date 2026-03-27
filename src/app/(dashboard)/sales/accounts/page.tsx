@@ -8,6 +8,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { UserRole } from "@/types";
 import { redirect } from "next/navigation";
+import { AddAccountDialog } from "./add-account-dialog";
 import { SalesAccountsFilters } from "./sales-accounts-filters";
 import { SalesAccountsTable } from "./sales-accounts-table";
 
@@ -44,7 +45,9 @@ export default async function SalesAccountsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Accounts" />
+      <PageHeader title="Accounts">
+        <AddAccountDialog countries={countries} />
+      </PageHeader>
 
       <SalesAccountsFilters
         currentSearch={params.search}

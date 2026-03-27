@@ -16,6 +16,7 @@ type OrderDetailTabsProps = {
   shipments: ShipmentRow[];
   documents: DocumentRow[];
   orderStatus: OrderStatus | string;
+  currencyCode?: string;
 };
 
 export function OrderDetailTabs({
@@ -25,6 +26,7 @@ export function OrderDetailTabs({
   shipments,
   documents,
   orderStatus,
+  currencyCode,
 }: OrderDetailTabsProps) {
   const [activeTab, setActiveTab] = useState("items");
 
@@ -64,7 +66,7 @@ export function OrderDetailTabs({
       </TabsList>
 
       <TabsContent value="items" className="mt-4 space-y-4">
-        <OrderItemsTable items={items} orderStatus={orderStatus} />
+        <OrderItemsTable items={items} orderStatus={orderStatus} currencyCode={currencyCode} />
         <OrderTimeline events={events} />
       </TabsContent>
 

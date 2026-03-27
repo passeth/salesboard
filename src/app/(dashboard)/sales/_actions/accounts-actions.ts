@@ -66,6 +66,37 @@ export async function upsertAccountAssignment(input: {
   revalidatePath(`/sales/accounts/${input.buyerOrgId}`);
 }
 
+export async function updateAccountSalesUser(input: {
+  buyerOrgId: string;
+  salesUserId: string;
+}) {
+  const { supabase } = await validateAdminOrSales();
+
+  const { data: existing } = await supabase
+    .from("account_assignments")
+    .select("id")
+    .eq("buyer_org_id", input.buyerOrgId)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("account_assignments")
+      .update({ sales_user_id: input.salesUserId })
+      .eq("id", existing.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("account_assignments").insert({
+      buyer_org_id: input.buyerOrgId,
+      sales_user_id: input.salesUserId,
+    });
+    if (error) throw error;
+  }
+
+  revalidatePath("/sales/accounts");
+  revalidatePath(`/sales/accounts/${input.buyerOrgId}`);
+}
+
 export async function upsertBuyerProductPrice(input: {
   buyerOrgId: string;
   productId: string;
@@ -163,6 +194,107 @@ export async function bulkUpdatePrices(input: {
   }
 
   revalidatePath(`/sales/accounts/${input.buyerOrgId}`);
+}
+
+export async function setBuyerProductSupplyType(input: {
+  buyerOrgId: string;
+  productIds: string[];
+  supplyType: "trading" | "pb" | "hidden" | null;
+}) {
+  const { supabase } = await validateAdminOrSales();
+
+  if (input.supplyType === null) {
+    const { error } = await supabase
+      .from("buyer_supplied_products")
+      .delete()
+      .eq("buyer_org_id", input.buyerOrgId)
+      .in("product_id", input.productIds);
+    if (error) throw error;
+  } else {
+    if (input.supplyType === "hidden") {
+      // When hiding, preserve existing is_pb_protected value
+      // Use update for existing rows, insert for new ones
+      for (const productId of input.productIds) {
+        const { data: existing } = await supabase
+          .from("buyer_supplied_products")
+          .select("id")
+          .eq("buyer_org_id", input.buyerOrgId)
+          .eq("product_id", productId)
+          .maybeSingle();
+
+        if (existing) {
+          const { error } = await supabase
+            .from("buyer_supplied_products")
+            .update({ supply_type: "hidden" })
+            .eq("id", existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("buyer_supplied_products")
+            .insert({
+              buyer_org_id: input.buyerOrgId,
+              product_id: productId,
+              supply_type: "hidden",
+            });
+          if (error) throw error;
+        }
+      }
+    } else {
+      const rows = input.productIds.map((productId) => ({
+        buyer_org_id: input.buyerOrgId,
+        product_id: productId,
+        supply_type: input.supplyType,
+        is_pb_protected: input.supplyType === "pb",
+      }));
+      const { error } = await supabase
+        .from("buyer_supplied_products")
+        .upsert(rows, { onConflict: "buyer_org_id,product_id" });
+      if (error) throw error;
+    }
+  }
+
+  revalidatePath(`/sales/accounts/${input.buyerOrgId}`);
+}
+
+export async function updateOrgCurrencyCode(orgId: string, currencyCode: string) {
+  const { supabase } = await validateAdminOrSales();
+
+  const { error } = await supabase
+    .from("organizations")
+    .update({ currency_code: currencyCode })
+    .eq("id", orgId);
+
+  if (error) throw error;
+
+  revalidatePath("/sales/accounts");
+  revalidatePath(`/sales/accounts/${orgId}`);
+}
+
+export async function createBuyerAccount(input: {
+  name: string;
+  code?: string;
+  countryCode?: string;
+  currencyCode?: string;
+}) {
+  const { supabase } = await validateAdminOrSales();
+
+  const { data, error } = await supabase
+    .from("organizations")
+    .insert({
+      name: input.name.trim(),
+      code: input.code?.trim() || null,
+      org_type: "buyer_company" as const,
+      country_code: input.countryCode || null,
+      currency_code: input.currencyCode || null,
+      status: "active" as const,
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+
+  revalidatePath("/sales/accounts");
+  return data.id;
 }
 
 export async function deleteBuyerProductPrice(priceId: string, buyerOrgId: string) {

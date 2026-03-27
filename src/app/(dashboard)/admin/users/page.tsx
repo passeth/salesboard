@@ -30,14 +30,22 @@ export default async function AdminUsersPage({
   }
 
   const supabase = await createClient();
-  const usersResult = await getAdminUsers(supabase, {
-    role: params.role,
-    status: params.status,
-    sort: params.sort,
-    sortDir,
-    page: safePage,
-    pageSize: 20,
-  });
+  const [usersResult, { data: orgs }] = await Promise.all([
+    getAdminUsers(supabase, {
+      role: params.role,
+      status: params.status,
+      sort: params.sort,
+      sortDir,
+      page: safePage,
+      pageSize: 20,
+    }),
+    supabase
+      .from("organizations")
+      .select("id, name")
+      .order("name"),
+  ]);
+
+  const orgOptions = (orgs ?? []).map((o) => ({ id: o.id as string, name: o.name as string }));
 
   return (
     <section className="flex flex-col gap-6">
@@ -52,6 +60,7 @@ export default async function AdminUsersPage({
         currentStatus={params.status}
         currentSort={params.sort}
         currentSortDir={params.sortDir}
+        orgOptions={orgOptions}
       />
     </section>
   );

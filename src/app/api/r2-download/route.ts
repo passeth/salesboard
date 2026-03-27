@@ -30,13 +30,18 @@ export async function GET(request: NextRequest) {
       r2Response.headers.get("content-type") || "application/octet-stream";
     const blob = await r2Response.arrayBuffer();
 
-    return new NextResponse(blob, {
-      headers: {
-        "Content-Type": contentType,
-        "Content-Length": blob.byteLength.toString(),
-        "Cache-Control": "public, max-age=3600",
-      },
-    });
+    const filename = request.nextUrl.searchParams.get("filename");
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "Content-Length": blob.byteLength.toString(),
+      "Cache-Control": "public, max-age=3600",
+    };
+
+    if (filename) {
+      headers["Content-Disposition"] = `attachment; filename="${filename}"`;
+    }
+
+    return new NextResponse(blob, { headers });
   } catch {
     return NextResponse.json(
       { error: "Failed to fetch file from storage" },

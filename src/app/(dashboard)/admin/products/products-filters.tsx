@@ -22,6 +22,7 @@ type ProductsFiltersProps = {
   currentSearch?: string;
 };
 
+const PRODUCT_CATEGORIES = ["Skin", "Body", "Hair", "Perfume", "Other"] as const;
 const PRODUCT_STATUSES = ["active", "inactive"] as const;
 
 export function ProductsFilters({
@@ -119,7 +120,8 @@ export function ProductsFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((category) => (
+            <SelectItem value="__none__">No Category</SelectItem>
+            {PRODUCT_CATEGORIES.map((category) => (
               <SelectItem key={category} value={category}>
                 {category}
               </SelectItem>

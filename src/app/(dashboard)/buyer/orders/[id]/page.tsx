@@ -51,6 +51,14 @@ export default async function BuyerOrderDetailPage({
     redirect(`/buyer/order/new?draft=${order.id}`);
   }
 
+  const shipToOrgsResult = await supabase
+    .from("organizations")
+    .select("id, name, code")
+    .eq("parent_org_id", order.ordering_org_id)
+    .eq("org_type", "buyer_ship_to")
+    .eq("status", "active")
+    .order("name");
+
   return (
     <div className="flex flex-col gap-6">
       <Breadcrumb>
@@ -75,6 +83,8 @@ export default async function BuyerOrderDetailPage({
         order={order as OrderWithOrg}
         items={itemsResult.data}
         shipments={(shipmentsResult.data ?? []) as ShipmentRow[]}
+        events={eventsResult.data}
+        shipToOrgs={shipToOrgsResult.data ?? []}
       />
 
       <OrderDetailTabs
@@ -84,6 +94,7 @@ export default async function BuyerOrderDetailPage({
         shipments={(shipmentsResult.data ?? []) as ShipmentRow[]}
         documents={(documentsResult.data ?? []) as DocumentRow[]}
         orderStatus={order.status}
+        currencyCode={order.organization?.currency_code || order.currency_code}
       />
     </div>
   );

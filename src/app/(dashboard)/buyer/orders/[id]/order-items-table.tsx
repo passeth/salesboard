@@ -17,18 +17,19 @@ import { OrderItemWithProduct, OrderStatus } from "@/types";
 type OrderItemsTableProps = {
   items: OrderItemWithProduct[];
   orderStatus: OrderStatus | string;
+  currencyCode?: string;
 };
 
-function formatCurrency(value: number | null) {
+function formatCurrency(value: number | null, currencyCode: string = "USD") {
   if (value === null) {
     return "-";
   }
 
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    currency: currencyCode,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(value);
 }
 
@@ -50,7 +51,7 @@ function renderDiff(current: number | null, baseline: number) {
   );
 }
 
-export function OrderItemsTable({ items, orderStatus }: OrderItemsTableProps) {
+export function OrderItemsTable({ items, orderStatus, currencyCode = "USD" }: OrderItemsTableProps) {
   const totals = items.reduce(
     (acc, item) => {
       acc.requested += item.requested_qty;
@@ -155,9 +156,9 @@ export function OrderItemsTable({ items, orderStatus }: OrderItemsTableProps) {
                       </div>
                     </TableCell>
                     <TableCell className="text-right tabular-nums text-muted-foreground">{final_.pcs}</TableCell>
-                    <TableCell className="border-l text-right tabular-nums">{formatCurrency(item.unit_price)}</TableCell>
+                    <TableCell className="border-l text-right tabular-nums">{formatCurrency(item.unit_price, currencyCode)}</TableCell>
                     <TableCell className="border-l text-right tabular-nums">
-                      {item.unit_price !== null ? formatCurrency(item.unit_price * item.requested_qty) : "-"}
+                      {item.unit_price !== null ? formatCurrency(item.unit_price * item.requested_qty, currencyCode) : "-"}
                     </TableCell>
                     <TableCell className="border-l">
                       <OrderItemStatusBadge status={item.status} />
@@ -196,7 +197,7 @@ export function OrderItemsTable({ items, orderStatus }: OrderItemsTableProps) {
                 <TableCell className="text-right tabular-nums text-muted-foreground">{totals.finalPcs.toLocaleString()}</TableCell>
                 <TableCell className="border-l" />
                 <TableCell className="border-l text-right tabular-nums font-medium">
-                  {totals.totalAmount > 0 ? formatCurrency(totals.totalAmount) : "-"}
+                  {totals.totalAmount > 0 ? formatCurrency(totals.totalAmount, currencyCode) : "-"}
                 </TableCell>
                 <TableCell colSpan={2} className="border-l" />
               </TableRow>

@@ -1,8 +1,17 @@
 import { ProductRow } from "@/types/database";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BarcodeDetailModal } from "./barcode-detail-modal";
+import { BarcodeEditor } from "./barcode-editor";
 
-export function ProductInfo({ product }: { product: ProductRow }) {
+type Props = {
+  product: ProductRow;
+  barcodeImageUrl: string | null;
+  isAdmin?: boolean;
+  productId?: string;
+};
+
+export function ProductInfo({ product, barcodeImageUrl, isAdmin, productId }: Props) {
   const extraJson = product.extra_json as Record<string, unknown> | null;
   const nameEn = extraJson?.name_en as string | undefined;
 
@@ -20,8 +29,33 @@ export function ProductInfo({ product }: { product: ProductRow }) {
           </div>
           <div className="flex flex-col gap-1">
             <dt className="text-sm font-medium text-muted-foreground">Barcode</dt>
-            <dd className="text-sm">{product.barcode || "—"}</dd>
+            <dd>
+              {isAdmin && productId ? (
+                <BarcodeEditor
+                  productId={productId}
+                  currentBarcode={product.barcode}
+                  hasBarcodeImage={!!barcodeImageUrl}
+                />
+              ) : (
+                <span className="text-sm">{product.barcode || "—"}</span>
+              )}
+            </dd>
           </div>
+          {barcodeImageUrl && product.barcode && (
+            <div className="col-span-full flex flex-col gap-1">
+              <dt className="text-sm font-medium text-muted-foreground">
+                Barcode Image
+              </dt>
+              <dd>
+                <BarcodeDetailModal
+                  barcodeImageUrl={barcodeImageUrl}
+                  barcode={product.barcode}
+                  sku={product.sku}
+                  productName={product.name}
+                />
+              </dd>
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <dt className="text-sm font-medium text-muted-foreground">QR Code</dt>
             <dd className="text-sm">{product.qr_code || "—"}</dd>

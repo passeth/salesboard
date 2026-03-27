@@ -14,6 +14,7 @@ import {
   ColumnDef,
   OnChangeFn,
   PaginationState,
+  RowSelectionState,
   SortingState,
   flexRender,
   getCoreRowModel,
@@ -37,9 +38,13 @@ type DataTableProps<TData, TValue> = {
   onPageSizeChange?: (nextPageSize: number) => void;
   pageSizeOptions?: number[];
   onRowClick?: (row: TData) => void;
+  enableRowSelection?: boolean;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
   emptyTitle?: string;
   emptyDescription?: string;
   className?: string;
+  tableClassName?: string;
 };
 
 export function DataTable<TData, TValue>({
@@ -55,9 +60,13 @@ export function DataTable<TData, TValue>({
   onPageSizeChange,
   pageSizeOptions,
   onRowClick,
+  enableRowSelection = false,
+  rowSelection,
+  onRowSelectionChange,
   emptyTitle = "No results",
   emptyDescription = "Try adjusting filters and search terms.",
   className,
+  tableClassName,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const activeSorting = sorting ?? internalSorting;
@@ -77,7 +86,10 @@ export function DataTable<TData, TValue>({
     state: {
       sorting: activeSorting,
       pagination,
+      ...(rowSelection != null && { rowSelection }),
     },
+    enableRowSelection,
+    onRowSelectionChange,
     manualPagination: true,
     manualSorting: true,
     onSortingChange: onSortingChange ?? setInternalSorting,
@@ -88,7 +100,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className={cn("overflow-hidden rounded-xl border bg-card", className)}>
-      <Table>
+      <Table className={tableClassName}>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -96,8 +108,12 @@ export function DataTable<TData, TValue>({
                 const renderHeader = header.column.columnDef.header;
                 const canSort = header.column.getCanSort();
 
+                const size = header.column.columnDef.size;
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    style={size ? { width: size, minWidth: size, maxWidth: size } : undefined}
+                  >
                     {header.isPlaceholder ? null : canSort && typeof renderHeader === "string" ? (
                       <DataTableColumnHeader column={header.column} title={renderHeader} />
                     ) : (
@@ -125,14 +141,24 @@ export function DataTable<TData, TValue>({
               ? table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    className={cn(onRowClick ? "cursor-pointer" : undefined)}
+                    data-state={row.getIsSelected() ? "selected" : undefined}
+                    className={cn(
+                      onRowClick ? "cursor-pointer" : undefined,
+                      row.getIsSelected() && "bg-muted/50",
+                    )}
                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
+                    {row.getVisibleCells().map((cell) => {
+                      const size = cell.column.columnDef.size;
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          style={size ? { width: size, minWidth: size, maxWidth: size } : undefined}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))
               : (

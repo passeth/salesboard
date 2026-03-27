@@ -79,7 +79,7 @@ export async function updateShipToOrganization(
 export async function deleteShipToOrganization(supabase: SupabaseClient, id: string) {
   const { error } = await supabase
     .from("organizations")
-    .delete()
+    .update({ status: "inactive" })
     .eq("id", id)
     .eq("org_type", "buyer_ship_to");
 

@@ -1,4 +1,7 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { ProductRow } from "@/types/database";
 import { ColumnDef } from "@tanstack/react-table";
@@ -9,62 +12,105 @@ const PRODUCT_STATUS_BADGE_CLASS: Record<ProductRow["status"], string> = {
   inactive: "bg-red-100 text-red-800",
 };
 
-export const productsColumns: ColumnDef<ProductRow>[] = [
-  {
-    id: "image",
-    header: "Image",
-    cell: ({ row }) => (
-      <div className="size-9 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden border border-border">
-        {row.original.image_url ? (
-          <img src={row.original.image_url} alt={row.original.name} className="size-full object-cover" />
-        ) : (
-          <PackageSearch className="size-4 text-muted-foreground" />
-        )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
-  },
-  {
-    accessorKey: "sku",
-    header: "SKU",
-    cell: ({ row }) => <span className="font-mono text-sm">{row.original.sku}</span>,
-  },
-  {
-    accessorKey: "brand",
-    header: "Brand",
-    cell: ({ row }) => row.original.brand ?? "-",
-  },
-  {
-    accessorKey: "category",
-    header: "Category",
-    cell: ({ row }) => row.original.category ?? "-",
-  },
-  {
-    accessorKey: "units_per_case",
-    header: "Units/Case",
-    cell: ({ row }) => row.original.units_per_case ?? "-",
-  },
-  {
-    accessorKey: "cbm",
-    header: "CBM",
-    cell: ({ row }) => (row.original.cbm != null ? row.original.cbm.toFixed(4) : "-"),
-  },
-  {
-    accessorKey: "barcode",
-    header: "Barcode",
-    cell: ({ row }) => row.original.barcode ?? "-",
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge className={cn("capitalize", PRODUCT_STATUS_BADGE_CLASS[row.original.status])}>
-        {row.original.status}
-      </Badge>
-    ),
-  },
-];
+type ColumnsOptions = {
+  onRowCheckboxClick?: (rowIndex: number, shiftKey: boolean) => void;
+};
+
+export function getProductsColumns(options?: ColumnsOptions): ColumnDef<ProductRow>[] {
+  return [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <div className="px-1" onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div
+          className="px-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (options?.onRowCheckboxClick) {
+              options.onRowCheckboxClick(row.index, e.shiftKey);
+            } else {
+              row.toggleSelected(!row.getIsSelected());
+            }
+          }}
+        >
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={() => {}}
+            aria-label="Select row"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      size: 40,
+    },
+    {
+      id: "image",
+      header: "Image",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="size-9 shrink-0 rounded bg-muted flex items-center justify-center overflow-hidden border border-border">
+          {row.original.image_url ? (
+            <img src={row.original.image_url} alt={row.original.name} className="size-full object-cover" />
+          ) : (
+            <PackageSearch className="size-4 text-muted-foreground" />
+          )}
+        </div>
+      ),
+      size: 50,
+    },
+    {
+      accessorKey: "name",
+      header: "Name",
+      cell: ({ row }) => (
+        <span className="font-medium whitespace-normal break-words">{row.original.name}</span>
+      ),
+      size: 280,
+    },
+    {
+      accessorKey: "sku",
+      header: "SKU",
+      cell: ({ row }) => (
+        <span className="font-mono text-sm whitespace-nowrap">{row.original.sku}</span>
+      ),
+      size: 100,
+    },
+    {
+      accessorKey: "brand",
+      header: "Brand",
+      cell: ({ row }) => (
+        <span className="whitespace-normal break-words">{row.original.brand ?? "-"}</span>
+      ),
+      size: 120,
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: ({ row }) => (
+        <span className="whitespace-normal break-words">{row.original.category ?? "-"}</span>
+      ),
+      size: 120,
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.original.status === "inactive" ? "inactive" : "active";
+        return (
+          <Badge className={cn("capitalize", PRODUCT_STATUS_BADGE_CLASS[status])}>{status}</Badge>
+        );
+      },
+      size: 90,
+    },
+  ];
+}

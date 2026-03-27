@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -49,6 +49,9 @@ import {
   Loader2,
   FolderPlus,
   RefreshCw,
+  Pencil,
+  Check,
+  ImageIcon,
 } from "lucide-react";
 import {
   getContentMappingOverview,
@@ -61,6 +64,7 @@ import {
   deleteContentFileAction,
   deleteSlugContents,
   renameSlugFiles,
+  renameContentSlug,
 } from "./_actions/mapping-actions";
 import type {
   SlugOverview,
@@ -120,12 +124,19 @@ export function ContentMappingClient({
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadSubfolder, setUploadSubfolder] = useState("__root__");
   const [uploading, setUploading] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
   const [createSlugDialogOpen, setCreateSlugDialogOpen] = useState(false);
   const [newSlugName, setNewSlugName] = useState("");
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [deletingSlug, setDeletingSlug] = useState(false);
   const [renamingSlug, setRenamingSlug] = useState(false);
+  const [editingSlugName, setEditingSlugName] = useState<string | null>(null);
+  const [editSlugInput, setEditSlugInput] = useState("");
+  const [savingSlugRename, setSavingSlugRename] = useState(false);
+  const [deletingSlugItem, setDeletingSlugItem] = useState<string | null>(null);
   const [renamingAll, setRenamingAll] = useState(false);
   const [renameAllProgress, setRenameAllProgress] = useState<{ current: number; total: number; currentSlug: string } | null>(null);
 
@@ -242,16 +253,58 @@ export function ContentMappingClient({
     }
   };
 
+  const addFiles = useCallback((incoming: FileList | File[]) => {
+    const arr = Array.from(incoming);
+    setPendingFiles((prev) => {
+      const existing = new Set(prev.map((f) => `${f.name}_${f.size}`));
+      const unique = arr.filter((f) => !existing.has(`${f.name}_${f.size}`));
+      return [...prev, ...unique];
+    });
+  }, []);
+
+  const removePendingFile = useCallback((index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.items?.length) setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) setIsDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      dragCounter.current = 0;
+      if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+    },
+    [addFiles],
+  );
+
   const handleUploadFiles = async () => {
-    if (!selectedSlug || !fileInputRef.current?.files?.length) return;
+    if (!selectedSlug || pendingFiles.length === 0) return;
 
     setUploading(true);
     const formData = new FormData();
     formData.set("slug", selectedSlug);
     formData.set("subfolder", uploadSubfolder === "__root__" ? "" : uploadSubfolder);
-    const inputFiles = fileInputRef.current.files;
-    for (let i = 0; i < inputFiles.length; i++) {
-      formData.append("files", inputFiles[i]);
+    for (const file of pendingFiles) {
+      formData.append("files", file);
     }
 
     const result = await uploadContentFiles(formData);
@@ -261,7 +314,7 @@ export function ContentMappingClient({
       alert(`Uploaded ${result.uploadedCount} file(s)`);
       setUploadDialogOpen(false);
       setUploadSubfolder("__root__");
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setPendingFiles([]);
       await refreshFiles();
       await refreshSlugList();
     } else {
@@ -367,6 +420,46 @@ export function ContentMappingClient({
     alert(`Complete: renamed ${totalRenamed}, skipped ${totalSkipped}, failed ${totalFailed}`);
 
     if (selectedSlug) await refreshFiles();
+  };
+
+  const handleRenameSlug = async (oldSlug: string) => {
+    const newSlug = editSlugInput.trim();
+    if (!newSlug || newSlug === oldSlug) {
+      setEditingSlugName(null);
+      return;
+    }
+    if (slugs.some((s) => s.slug === newSlug)) {
+      alert("This slug name already exists");
+      return;
+    }
+    setSavingSlugRename(true);
+    const result = await renameContentSlug(oldSlug, newSlug);
+    setSavingSlugRename(false);
+    setEditingSlugName(null);
+    if (result.success) {
+      if (selectedSlug === oldSlug) setSelectedSlug(newSlug);
+      await refreshSlugList();
+      await refreshStats();
+    } else {
+      alert(`Rename error: ${result.error}`);
+    }
+  };
+
+  const handleDeleteSlugItem = async (slug: string) => {
+    setDeletingSlugItem(slug);
+    const result = await deleteSlugContents(slug);
+    setDeletingSlugItem(null);
+    if (result.success) {
+      if (selectedSlug === slug) {
+        setSelectedSlug(null);
+        setFiles([]);
+        setMappedProducts([]);
+      }
+      await refreshSlugList();
+      await refreshStats();
+    } else {
+      alert(`Delete error: ${result.error}`);
+    }
   };
 
   return (
@@ -481,29 +574,132 @@ export function ContentMappingClient({
             <ScrollArea className="h-[500px]">
               <div className="space-y-1">
                 {filteredSlugs.map((slugItem) => (
-                  <button
-                    key={slugItem.slug}
-                    onClick={() => handleSelectSlug(slugItem.slug)}
-                    className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                      selectedSlug === slugItem.slug
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                    }`}
-                  >
-                    <Folder className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 truncate">{slugItem.slug}</span>
-                    <Badge
-                      variant={
-                        slugItem.mappedCount === 0 ? "destructive" : "secondary"
-                      }
-                      className="text-xs"
-                    >
-                      {slugItem.mappedCount === 0 && (
-                        <AlertTriangle className="mr-1 h-3 w-3" />
-                      )}
-                      {slugItem.mappedCount}
-                    </Badge>
-                  </button>
+                  <div key={slugItem.slug} className="group relative">
+                    {editingSlugName === slugItem.slug ? (
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1.5">
+                        <Input
+                          value={editSlugInput}
+                          onChange={(e) => setEditSlugInput(e.target.value)}
+                          className="h-7 text-sm"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameSlug(slugItem.slug);
+                            if (e.key === "Escape") setEditingSlugName(null);
+                          }}
+                          disabled={savingSlugRename}
+                        />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 shrink-0"
+                          onClick={() => handleRenameSlug(slugItem.slug)}
+                          disabled={savingSlugRename}
+                        >
+                          {savingSlugRename ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 shrink-0"
+                          onClick={() => setEditingSlugName(null)}
+                          disabled={savingSlugRename}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleSelectSlug(slugItem.slug)}
+                        className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                          selectedSlug === slugItem.slug
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted"
+                        }`}
+                      >
+                        {slugItem.thumbnailUrl ? (
+                          <img
+                            src={slugItem.thumbnailUrl}
+                            alt=""
+                            className="h-7 w-7 shrink-0 rounded object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-muted">
+                            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span className="flex-1 truncate">{slugItem.slug}</span>
+                        <Badge
+                          variant={
+                            slugItem.mappedCount === 0
+                              ? "destructive"
+                              : "secondary"
+                          }
+                          className="text-xs"
+                        >
+                          {slugItem.mappedCount === 0 && (
+                            <AlertTriangle className="mr-1 h-3 w-3" />
+                          )}
+                          {slugItem.mappedCount}
+                        </Badge>
+                      </button>
+                    )}
+                    {editingSlugName !== slugItem.slug && (
+                      <div className="absolute right-10 top-1/2 flex -translate-y-1/2 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          type="button"
+                          className="rounded p-1 hover:bg-muted"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingSlugName(slugItem.slug);
+                            setEditSlugInput(slugItem.slug);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              className="rounded p-1 hover:bg-destructive/10"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {deletingSlugItem === slugItem.slug ? (
+                                <Loader2 className="h-3 w-3 animate-spin text-destructive" />
+                              ) : (
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              )}
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete {slugItem.slug}?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete all files and remove
+                                all product mappings for this slug.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  handleDeleteSlugItem(slugItem.slug)
+                                }
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
+                  </div>
                 ))}
                 {filteredSlugs.length === 0 && (
                   <p className="py-4 text-center text-sm text-muted-foreground">
@@ -695,7 +891,13 @@ export function ContentMappingClient({
 
                     <Dialog
                       open={uploadDialogOpen}
-                      onOpenChange={setUploadDialogOpen}
+                      onOpenChange={(open) => {
+                        setUploadDialogOpen(open);
+                        if (!open) {
+                          setPendingFiles([]);
+                          setUploadSubfolder("__root__");
+                        }
+                      }}
                     >
                       <DialogTrigger asChild>
                         <Button size="sm" variant="outline">
@@ -703,7 +905,7 @@ export function ContentMappingClient({
                           Upload
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
                           <DialogTitle>
                             Upload to {selectedSlug}
@@ -731,27 +933,96 @@ export function ContentMappingClient({
                             </Select>
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-sm font-medium">
-                              Files
-                            </label>
-                            <Input
+                            <input
                               ref={fileInputRef}
                               type="file"
                               multiple
                               accept="image/*,.pdf,.psd,.ai,.eps"
+                              className="hidden"
+                              onChange={(e) => {
+                                if (e.target.files?.length) {
+                                  addFiles(e.target.files);
+                                  e.target.value = "";
+                                }
+                              }}
                             />
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => fileInputRef.current?.click()}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ")
+                                  fileInputRef.current?.click();
+                              }}
+                              onDragEnter={handleDragEnter}
+                              onDragLeave={handleDragLeave}
+                              onDragOver={handleDragOver}
+                              onDrop={handleDrop}
+                              className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors ${
+                                isDragging
+                                  ? "border-primary bg-primary/5"
+                                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                              }`}
+                            >
+                              <Upload className={`h-8 w-8 ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {isDragging ? "Drop files here" : "Drag files here or click to browse"}
+                                </p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                  Images, PDF, PSD, AI, EPS
+                                </p>
+                              </div>
+                            </div>
                           </div>
+                          {pendingFiles.length > 0 && (
+                            <ScrollArea className="max-h-[200px]">
+                              <div className="space-y-1">
+                                {pendingFiles.map((file, i) => (
+                                  <div
+                                    key={`${file.name}-${file.size}`}
+                                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                                  >
+                                    {file.type.startsWith("image/") ? (
+                                      <img
+                                        src={URL.createObjectURL(file)}
+                                        alt=""
+                                        className="h-8 w-8 shrink-0 rounded object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-muted">
+                                        <FileText className="h-4 w-4 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                    <span className="flex-1 truncate">{file.name}</span>
+                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                      {formatFileSize(file.size)}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => removePendingFile(i)}
+                                      className="shrink-0 rounded p-0.5 hover:bg-destructive/10"
+                                    >
+                                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                          )}
                           <Button
                             className="w-full"
                             onClick={handleUploadFiles}
-                            disabled={uploading}
+                            disabled={uploading || pendingFiles.length === 0}
                           >
                             {uploading ? (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
                               <Upload className="mr-2 h-4 w-4" />
                             )}
-                            {uploading ? "Uploading..." : "Upload Files"}
+                            {uploading
+                              ? "Uploading..."
+                              : `Upload ${pendingFiles.length} File${pendingFiles.length !== 1 ? "s" : ""}`}
                           </Button>
                         </div>
                       </DialogContent>

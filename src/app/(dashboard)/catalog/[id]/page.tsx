@@ -123,7 +123,12 @@ export default async function ProductDetailPage({
         </div>
 
         <div className="space-y-6">
-          <ProductInfo product={product} barcodeImageUrl={barcodeImage?.url ?? null} />
+          <ProductInfo
+            product={product}
+            barcodeImageUrl={barcodeImage?.url ?? null}
+            isAdmin={userRole === "admin"}
+            productId={id}
+          />
           <ProductLogistics product={product} />
         </div>
       </div>

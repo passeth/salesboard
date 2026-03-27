@@ -261,7 +261,7 @@ export async function getProductCatalogForBuyer(
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   const threeMonthsCutoff = threeMonthsAgo.toISOString();
 
-  const [productsResult, historyResult, shippedResult, draftResult, buyerPricesResult] = await Promise.all([
+  const [productsResult, historyResult, shippedResult, draftResult, buyerPricesResult, supplyResult, otherPbResult] = await Promise.all([
     productsQuery.order("name", { ascending: true }),
 
     supabase
@@ -290,6 +290,17 @@ export async function getProductCatalogForBuyer(
       .select("product_id, final_price")
       .eq("buyer_org_id", orgId)
       .is("effective_to", null),
+
+    supabase
+      .from("buyer_supplied_products")
+      .select("product_id, supply_type")
+      .eq("buyer_org_id", orgId),
+
+    supabase
+      .from("buyer_supplied_products")
+      .select("product_id")
+      .neq("buyer_org_id", orgId)
+      .eq("is_pb_protected", true),
   ]);
 
   if (productsResult.error) return { data: [], error: productsResult.error };
@@ -329,14 +340,34 @@ export async function getProductCatalogForBuyer(
 
   const cartMap = new Map<string, number>();
   const draftOrders = draftResult.data ?? [];
+  // DEBUG: temporary logging to diagnose cart_qty not showing
+  console.log("[getProductCatalogForBuyer] draftResult.error:", draftResult.error);
+  console.log("[getProductCatalogForBuyer] draftOrders.length:", draftOrders.length);
   if (draftOrders.length > 0) {
+    console.log("[getProductCatalogForBuyer] order_items count:", (draftOrders[0].order_items ?? []).length);
     for (const item of (draftOrders[0].order_items ?? []) as CartTuple[]) {
       cartMap.set(item.product_id, (cartMap.get(item.product_id) ?? 0) + item.requested_qty);
     }
   }
+  console.log("[getProductCatalogForBuyer] cartMap.size:", cartMap.size);
+
+  type SupplyTuple = { product_id: string; supply_type: "trading" | "pb" | "hidden" };
+  const supplyTypeMap = new Map<string, "trading" | "pb" | "hidden">();
+  for (const s of (supplyResult.data ?? []) as SupplyTuple[]) {
+    supplyTypeMap.set(s.product_id, s.supply_type);
+  }
+
+  const otherPbIds = new Set<string>();
+  for (const row of (otherPbResult.data ?? []) as { product_id: string }[]) {
+    const myType = supplyTypeMap.get(row.product_id);
+    if (myType !== "trading" && myType !== "pb") {
+      otherPbIds.add(row.product_id);
+    }
+  }
 
   const products = productsResult.data ?? [];
-  const result: BuyerCatalogProduct[] = products.map((p) => ({
+  const supplied = products.filter((p) => !otherPbIds.has(p.id));
+  const result: BuyerCatalogProduct[] = supplied.map((p) => ({
     id: p.id,
     name: p.name,
     sku: p.sku,
@@ -353,6 +384,7 @@ export async function getProductCatalogForBuyer(
     shipped_qty_3m: shipped3mMap.get(p.id) ?? 0,
     cart_qty: cartMap.get(p.id) ?? 0,
     has_trade_history: tradedProducts.has(p.id),
+    supply_type: supplyTypeMap.get(p.id) ?? null,
   }));
 
   return { data: result, error: null };

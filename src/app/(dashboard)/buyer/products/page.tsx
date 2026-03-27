@@ -2,8 +2,10 @@ import { PageHeader } from "@/components/page-header";
 import { getCurrentUser } from "@/lib/auth";
 import { getBuyerOrganizations } from "@/lib/queries/organizations";
 import {
+  getBuyerDraftOrder,
   getProductBrands,
   getProductCatalogForBuyer,
+  getProductCategories,
   getProductTranslations,
   SUPPORTED_LOCALES,
   type SupportedLocale,
@@ -42,13 +44,23 @@ export default async function BuyerProductsPage({
     buyerOrgs = data;
   }
 
-  const [productsResult, brands, translations] = await Promise.all([
+  const [productsResult, brands, categories, translations, orgCurrencyResult, draftResult] = await Promise.all([
     selectedOrgId
       ? getProductCatalogForBuyer(supabase, selectedOrgId, { brand })
       : { data: [], error: null },
     getProductBrands(supabase),
+    getProductCategories(supabase),
     getProductTranslations(supabase, locale),
+    selectedOrgId
+      ? supabase.from("organizations").select("currency_code").eq("id", selectedOrgId).single()
+      : { data: null },
+    selectedOrgId
+      ? getBuyerDraftOrder(supabase, selectedOrgId)
+      : { data: null },
   ]);
+
+  const currencyCode = orgCurrencyResult?.data?.currency_code ?? "USD";
+  const draftOrderId = draftResult?.data?.id ?? null;
 
   const translationsObj = Object.fromEntries(translations);
 
@@ -69,9 +81,12 @@ export default async function BuyerProductsPage({
       <BuyerProductsGrid
         products={productsResult.data}
         brands={brands}
+        categories={categories}
         orgId={selectedOrgId ?? ""}
         locale={locale}
         translations={translationsObj}
+        currencyCode={currencyCode}
+        draftOrderId={draftOrderId}
       />
     </div>
   );

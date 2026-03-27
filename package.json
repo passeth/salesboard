@@ -9,7 +9,8 @@
     "tokens": "npx tsx src/design-tokens/generate-css.ts",
     "figma:sync": "npx tsx src/design-tokens/figma-sync.ts",
     "figma:guide": "npx tsx src/design-tokens/figma-push.ts",
-    "migrate:images": "npx tsx scripts/migrate-product-images.ts"
+    "migrate:images": "npx tsx scripts/migrate-product-images.ts",
+    "generate:barcodes": "npx tsx scripts/generate-barcodes.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1010.0",
@@ -21,6 +22,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "embla-carousel-react": "^8.6.0",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
     "lucide-react": "^0.511.0",
@@ -36,13 +38,17 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/bwip-js": "^3.2.3",
     "@types/file-saver": "^2.0.7",
     "@types/node": "25.5.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "agentation": "^2.3.3",
+    "bwip-js": "^4.8.0",
     "csv-parse": "^6.1.0",
+    "jsbarcode": "^3.12.3",
     "postgres": "^3.4.8",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "xlsx": "^0.18.5"
   }
 }

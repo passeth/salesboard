@@ -1,9 +1,24 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { UserWithOrg } from "@/lib/queries/admin";
+import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
 import { UserRow } from "@/types/database";
-import { cn } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
+import { KeyRound } from "lucide-react";
+import { useState, useTransition } from "react";
+import { adminResetPassword } from "./_actions/user-actions";
 
 const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.Buyer]: "Buyer",
@@ -32,6 +47,55 @@ function formatDate(value: string | null) {
   }
 
   return new Date(value).toLocaleDateString("en-CA");
+}
+
+function ResetPasswordCell({ userId }: { userId: string }) {
+  const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleReset = (formData: FormData) => {
+    setError(null);
+    setSuccess(false);
+    startTransition(async () => {
+      try {
+        const password = formData.get("password") as string;
+        await adminResetPassword(userId, password);
+        setSuccess(true);
+        setTimeout(() => setOpen(false), 1000);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to reset password");
+      }
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setError(null); setSuccess(false); }}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <KeyRound className="mr-1 h-3.5 w-3.5" />
+          Reset PW
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reset Password</DialogTitle>
+        </DialogHeader>
+        <form action={handleReset} className="flex flex-col gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="password">New Password</Label>
+            <Input id="password" name="password" type="password" minLength={6} required />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {success && <p className="text-sm text-emerald-600">Password reset successfully</p>}
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Resetting..." : "Reset Password"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export const usersColumns: ColumnDef<UserWithOrg>[] = [
@@ -73,5 +137,10 @@ export const usersColumns: ColumnDef<UserWithOrg>[] = [
     accessorKey: "created_at",
     header: "Created",
     cell: ({ row }) => formatDate(row.original.created_at),
+  },
+  {
+    id: "actions",
+    header: "",
+    cell: ({ row }) => <ResetPasswordCell userId={row.original.id} />,
   },
 ];

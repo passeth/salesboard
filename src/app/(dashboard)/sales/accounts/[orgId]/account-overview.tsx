@@ -8,8 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { upsertAccountAssignment } from "@/app/(dashboard)/sales/_actions/accounts-actions";
+import { upsertAccountAssignment, updateOrgCurrencyCode } from "@/app/(dashboard)/sales/_actions/accounts-actions";
 import type { AccountOverview } from "@/types";
+import { Check, Pencil, X } from "lucide-react";
 import { useState, useTransition } from "react";
 
 type AccountOverviewTabProps = {
@@ -29,6 +30,21 @@ export function AccountOverviewTab({
   const [salesUserId, setSalesUserId] = useState(assignment?.sales_user_id ?? "");
   const [logisticsUserId, setLogisticsUserId] = useState(assignment?.logistics_user_id ?? "");
   const [isPending, startTransition] = useTransition();
+
+  const [isEditingCurrency, setIsEditingCurrency] = useState(false);
+  const [currencyValue, setCurrencyValue] = useState(org.currency_code ?? "");
+  const [isSavingCurrency, startCurrencyTransition] = useTransition();
+
+  function handleSaveCurrency() {
+    startCurrencyTransition(async () => {
+      try {
+        await updateOrgCurrencyCode(org.id, currencyValue.trim().toUpperCase());
+        setIsEditingCurrency(false);
+      } catch {
+        alert("Failed to update currency.");
+      }
+    });
+  }
 
   const salesUsers = internalUsers.filter((u) => u.role === "sales" || u.role === "admin");
   const logisticsUsers = internalUsers.filter((u) => u.role === "logistics" || u.role === "admin");
@@ -66,7 +82,49 @@ export function AccountOverviewTab({
           <dt className="text-muted-foreground">Country</dt>
           <dd>{country?.name ?? org.country_code ?? "-"}</dd>
           <dt className="text-muted-foreground">Currency</dt>
-          <dd>{org.currency_code ?? "-"}</dd>
+          <dd>
+            {isEditingCurrency ? (
+              <div className="flex items-center gap-1">
+                <Select
+                  value={currencyValue}
+                  onValueChange={setCurrencyValue}
+                  disabled={isSavingCurrency}
+                >
+                  <SelectTrigger className="h-7 w-28 text-xs">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["USD", "EUR", "GBP", "JPY", "KRW", "AUD", "CAD", "SGD", "HKD", "CNY", "THB", "MYR", "IDR", "VND", "INR"].map((c) => (
+                      <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <button
+                  onClick={handleSaveCurrency}
+                  disabled={isSavingCurrency}
+                  className="text-green-600 hover:text-green-700 disabled:opacity-50"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => { setIsEditingCurrency(false); setCurrencyValue(org.currency_code ?? ""); }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 group">
+                <span>{org.currency_code ?? "-"}</span>
+                <button
+                  onClick={() => setIsEditingCurrency(true)}
+                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+          </dd>
           <dt className="text-muted-foreground">Status</dt>
           <dd>
             <span

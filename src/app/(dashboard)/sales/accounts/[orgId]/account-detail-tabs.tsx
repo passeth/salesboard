@@ -31,7 +31,7 @@ export function AccountDetailTabs({
         <TabsTrigger value="pricing">
           Pricing
           <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs tabular-nums">
-            {pricing.filter((p) => p.price_id !== null).length}
+            {pricing.filter((p) => p.supply_type !== null).length}
           </span>
         </TabsTrigger>
         <TabsTrigger value="performance">Performance</TabsTrigger>

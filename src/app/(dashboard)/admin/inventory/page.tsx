@@ -12,6 +12,7 @@ import { InventoryTable } from "./inventory-table";
 
 type AdminInventorySearchParams = {
   search?: string;
+  brand?: string;
   sort?: string;
   sortDir?: string;
   page?: string;
@@ -61,13 +62,21 @@ export default async function AdminInventoryPage({
 
   const supabase = await createClient();
 
+  const { data: brandsData } = await supabase
+    .from("products")
+    .select("brand")
+    .not("brand", "is", null)
+    .order("brand");
+  const brands = [...new Set((brandsData ?? []).map((b) => b.brand as string))];
+
   const [inventoryResult, productionPlansObj, committedObj] = await Promise.all([
     getInventorySummary(supabase, {
       search: params.search,
+      brand: params.brand,
       sort: params.sort,
       sortDir,
       page: safePage,
-      pageSize: 20,
+      pageSize: 200,
     }),
     getCachedProductionPlans(),
     getCachedCommittedQty(),
@@ -87,13 +96,13 @@ export default async function AdminInventoryPage({
         <InventorySyncButton />
       </div>
 
-      <InventorySearch currentSearch={params.search} />
+      <InventorySearch currentSearch={params.search} currentBrand={params.brand} brands={brands} />
 
       <InventoryTable
         products={productsWithPlans}
         totalCount={inventoryResult.count}
         currentPage={safePage}
-        pageSize={20}
+        pageSize={200}
         currentSort={params.sort}
         currentSortDir={params.sortDir}
       />

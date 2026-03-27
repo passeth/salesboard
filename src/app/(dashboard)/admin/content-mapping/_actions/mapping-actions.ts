@@ -15,6 +15,7 @@ import type { R2ContentFile } from "@/lib/r2/types";
 export type SlugOverview = {
   slug: string;
   mappedCount: number;
+  thumbnailUrl: string | null;
 };
 
 export type MappedProduct = {
@@ -70,11 +71,30 @@ export async function getContentMappingOverview(): Promise<{
     {}
   );
 
-  // 3. R2 기준으로 결합
-  const slugs = r2Slugs.map((slug) => ({
-    slug,
-    mappedCount: countBySlug[slug] || 0,
-  }));
+  const imageExts = new Set(["jpg", "jpeg", "png", "gif", "webp"]);
+
+  const slugsWithThumbs = await Promise.all(
+    r2Slugs.map(async (slug) => {
+      let thumbnailUrl: string | null = null;
+      try {
+        const filesResult = await listContentFiles(slug);
+        if (filesResult.success && filesResult.files) {
+          const img = filesResult.files.find((f) => {
+            const ext = f.fileName.toLowerCase().split(".").pop() || "";
+            return imageExts.has(ext);
+          });
+          if (img) thumbnailUrl = img.publicUrl;
+        }
+      } catch {}
+      return {
+        slug,
+        mappedCount: countBySlug[slug] || 0,
+        thumbnailUrl,
+      };
+    }),
+  );
+
+  const slugs = slugsWithThumbs;
 
   // 4. DB에만 있고 R2에 없는 slug (orphaned)
   const r2Set = new Set(r2Slugs);
@@ -319,4 +339,38 @@ export async function renameSlugFiles(
 
   if (result.failed > 0) result.success = false;
   return result;
+}
+
+export async function renameContentSlug(
+  oldSlug: string,
+  newSlug: string,
+): Promise<{ success: boolean; renamed: number; error?: string }> {
+  const supabase = await createClient();
+
+  const listResult = await listContentFiles(oldSlug);
+  if (!listResult.success || !listResult.files) {
+    return { success: false, renamed: 0, error: listResult.error };
+  }
+
+  let renamed = 0;
+  for (const file of listResult.files) {
+    const relativePath = file.key.replace(`contents/${oldSlug}/`, "");
+    const newKey = `contents/${newSlug}/${relativePath}`;
+    const copyResult = await copyContentFile(file.key, newKey);
+    if (!copyResult.success) {
+      return { success: false, renamed, error: `Copy failed: ${copyResult.error}` };
+    }
+    const delResult = await deleteContentFile(file.key);
+    if (!delResult.success) {
+      return { success: false, renamed, error: `Delete failed: ${delResult.error}` };
+    }
+    renamed++;
+  }
+
+  await supabase
+    .from("product_master")
+    .update({ content_slug: newSlug, updated_at: new Date().toISOString() })
+    .eq("content_slug", oldSlug);
+
+  return { success: true, renamed };
 }

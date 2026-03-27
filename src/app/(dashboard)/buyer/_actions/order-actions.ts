@@ -294,3 +294,79 @@ export async function cancelOrder(orderId: string, reason?: string) {
   revalidatePath(`/buyer/orders/${orderId}`);
   revalidatePath("/buyer/orders");
 }
+
+export async function updateOrderShipTo(orderId: string, shipToOrgId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("status")
+    .eq("id", orderId)
+    .single();
+
+  if (!order || !["draft", "submitted"].includes(order.status)) {
+    throw new Error("Ship-to can only be changed for draft or submitted orders");
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update({ ship_to_org_id: shipToOrgId, updated_at: new Date().toISOString() })
+    .eq("id", orderId);
+
+  if (error) throw new Error(`Failed to update ship-to: ${error.message}`);
+
+  revalidatePath(`/buyer/orders/${orderId}`);
+  revalidatePath("/buyer/orders");
+}
+
+export type ProductOrderHistoryItem = {
+  order_id: string;
+  order_no: string;
+  status: string;
+  ordered_at: string;
+  unit_price: number | null;
+  requested_qty: number;
+  final_qty: number | null;
+};
+
+export async function getProductOrderHistory(
+  orgId: string,
+  productId: string,
+): Promise<ProductOrderHistoryItem[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, order_no, status, submitted_at, order_items(product_id, unit_price, requested_qty, final_qty)")
+    .eq("ordering_org_id", orgId)
+    .not("status", "in", '("draft","cancelled")')
+    .order("submitted_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  const result: ProductOrderHistoryItem[] = [];
+  for (const order of data) {
+    type ItemTuple = { product_id: string; unit_price: number | null; requested_qty: number; final_qty: number | null };
+    for (const item of (order.order_items ?? []) as ItemTuple[]) {
+      if (item.product_id === productId) {
+        result.push({
+          order_id: order.id,
+          order_no: order.order_no,
+          status: order.status,
+          ordered_at: order.submitted_at ?? "",
+          unit_price: item.unit_price,
+          requested_qty: item.requested_qty,
+          final_qty: item.final_qty,
+        });
+      }
+    }
+  }
+  return result;
+}

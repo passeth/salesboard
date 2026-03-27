@@ -43,13 +43,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { OrganizationRow } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
+import type { ShipToWithContact } from "@/types";
 import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
 type ShipToManagerProps = {
-  initialData: OrganizationRow[];
+  initialData: ShipToWithContact[];
 };
 
 type FormState = {
@@ -57,6 +58,11 @@ type FormState = {
   code: string;
   countryCode: string;
   status: "active" | "inactive";
+  consigneeName: string;
+  address: string;
+  tel: string;
+  fax: string;
+  email: string;
 };
 
 const DEFAULT_FORM_STATE: FormState = {
@@ -64,13 +70,18 @@ const DEFAULT_FORM_STATE: FormState = {
   code: "",
   countryCode: "",
   status: "active",
+  consigneeName: "",
+  address: "",
+  tel: "",
+  fax: "",
+  email: "",
 };
 
 export function ShipToManager({ initialData }: ShipToManagerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingShipTo, setEditingShipTo] = useState<OrganizationRow | null>(null);
+  const [editingShipTo, setEditingShipTo] = useState<ShipToWithContact | null>(null);
   const [formState, setFormState] = useState<FormState>(DEFAULT_FORM_STATE);
 
   const openCreateDialog = () => {
@@ -79,13 +90,18 @@ export function ShipToManager({ initialData }: ShipToManagerProps) {
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (shipTo: OrganizationRow) => {
+  const openEditDialog = (shipTo: ShipToWithContact) => {
     setEditingShipTo(shipTo);
     setFormState({
       name: shipTo.name,
       code: shipTo.code ?? "",
       countryCode: shipTo.country_code ?? "",
       status: shipTo.status,
+      consigneeName: shipTo.consignee_contact?.name ?? "",
+      address: shipTo.consignee_contact?.address ?? "",
+      tel: shipTo.consignee_contact?.tel ?? "",
+      fax: shipTo.consignee_contact?.fax ?? "",
+      email: shipTo.consignee_contact?.email ?? "",
     });
     setIsDialogOpen(true);
   };
@@ -107,6 +123,11 @@ export function ShipToManager({ initialData }: ShipToManagerProps) {
       name: trimmedName,
       code: formState.code.trim() || undefined,
       country_code: formState.countryCode.trim() || undefined,
+      consignee_name: formState.consigneeName.trim() || undefined,
+      address: formState.address.trim() || undefined,
+      tel: formState.tel.trim() || undefined,
+      fax: formState.fax.trim() || undefined,
+      email: formState.email.trim() || undefined,
     };
 
     startTransition(async () => {
@@ -132,6 +153,10 @@ export function ShipToManager({ initialData }: ShipToManagerProps) {
       await deleteShipTo(id);
       router.refresh();
     });
+  };
+
+  const updateField = (field: keyof FormState, value: string) => {
+    setFormState((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -165,6 +190,8 @@ export function ShipToManager({ initialData }: ShipToManagerProps) {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Code</TableHead>
+                <TableHead>Consignee</TableHead>
+                <TableHead>Contact</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -182,6 +209,34 @@ export function ShipToManager({ initialData }: ShipToManagerProps) {
                         {shipTo.country_code ?? "-"}
                       </span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {shipTo.consignee_contact ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium">{shipTo.consignee_contact.name}</span>
+                        {shipTo.consignee_contact.address && (
+                          <span className="text-xs text-muted-foreground line-clamp-1">
+                            {shipTo.consignee_contact.address}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {shipTo.consignee_contact ? (
+                      <div className="flex flex-col gap-0.5">
+                        {shipTo.consignee_contact.tel && (
+                          <span className="text-xs text-muted-foreground">{shipTo.consignee_contact.tel}</span>
+                        )}
+                        {shipTo.consignee_contact.email && (
+                          <span className="text-xs text-muted-foreground">{shipTo.consignee_contact.email}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -242,66 +297,131 @@ export function ShipToManager({ initialData }: ShipToManagerProps) {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={(open) => (open ? setIsDialogOpen(true) : closeDialog())}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingShipTo ? "Edit Ship-to" : "Add Ship-to"}</DialogTitle>
           </DialogHeader>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="grid gap-2">
-              <Label htmlFor="ship-to-name">Name</Label>
-              <Input
-                id="ship-to-name"
-                value={formState.name}
-                onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
-                placeholder="Warehouse name"
-                required
-                disabled={isPending}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="ship-to-code">Code</Label>
-              <Input
-                id="ship-to-code"
-                value={formState.code}
-                onChange={(event) => setFormState((prev) => ({ ...prev, code: event.target.value }))}
-                placeholder="Optional code"
-                disabled={isPending}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="ship-to-country-code">Country Code</Label>
-              <Input
-                id="ship-to-country-code"
-                value={formState.countryCode}
-                onChange={(event) => setFormState((prev) => ({ ...prev, countryCode: event.target.value }))}
-                placeholder="e.g. KR"
-                disabled={isPending}
-              />
-            </div>
-
-            {editingShipTo ? (
-              <div className="grid gap-2">
-                <Label htmlFor="ship-to-status">Status</Label>
-                <Select
-                  value={formState.status}
-                  onValueChange={(value: "active" | "inactive") => {
-                    setFormState((prev) => ({ ...prev, status: value }));
-                  }}
-                  disabled={isPending}
-                >
-                  <SelectTrigger id="ship-to-status" className="w-full">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground">Location</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="ship-to-name">Name *</Label>
+                  <Input
+                    id="ship-to-name"
+                    value={formState.name}
+                    onChange={(e) => updateField("name", e.target.value)}
+                    placeholder="Warehouse name"
+                    required
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="ship-to-code">Code</Label>
+                  <Input
+                    id="ship-to-code"
+                    value={formState.code}
+                    onChange={(e) => updateField("code", e.target.value)}
+                    placeholder="Optional code"
+                    disabled={isPending}
+                  />
+                </div>
               </div>
-            ) : null}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="ship-to-country-code">Country Code</Label>
+                  <Input
+                    id="ship-to-country-code"
+                    value={formState.countryCode}
+                    onChange={(e) => updateField("countryCode", e.target.value)}
+                    placeholder="e.g. KR"
+                    disabled={isPending}
+                  />
+                </div>
+                {editingShipTo && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="ship-to-status">Status</Label>
+                    <Select
+                      value={formState.status}
+                      onValueChange={(value: "active" | "inactive") => updateField("status", value)}
+                      disabled={isPending}
+                    >
+                      <SelectTrigger id="ship-to-status" className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground">Consignee Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="consignee-name">Consignee Name</Label>
+                  <Input
+                    id="consignee-name"
+                    value={formState.consigneeName}
+                    onChange={(e) => updateField("consigneeName", e.target.value)}
+                    placeholder="Company / Person name"
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="consignee-email">Email</Label>
+                  <Input
+                    id="consignee-email"
+                    type="email"
+                    value={formState.email}
+                    onChange={(e) => updateField("email", e.target.value)}
+                    placeholder="consignee@example.com"
+                    disabled={isPending}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="consignee-address">Address</Label>
+                <Textarea
+                  id="consignee-address"
+                  value={formState.address}
+                  onChange={(e) => updateField("address", e.target.value)}
+                  placeholder="Full shipping address"
+                  rows={2}
+                  disabled={isPending}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="consignee-tel">Tel</Label>
+                  <Input
+                    id="consignee-tel"
+                    value={formState.tel}
+                    onChange={(e) => updateField("tel", e.target.value)}
+                    placeholder="+7-XXX-XXX-XXXX"
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="consignee-fax">Fax</Label>
+                  <Input
+                    id="consignee-fax"
+                    value={formState.fax}
+                    onChange={(e) => updateField("fax", e.target.value)}
+                    placeholder="+7-XXX-XXX-XXXX"
+                    disabled={isPending}
+                  />
+                </div>
+              </div>
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog} disabled={isPending}>

@@ -1,17 +1,19 @@
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
-import { getBuyerOrders } from "@/lib/queries/orders";
+import { getBuyerOrderCountsByStatus, getBuyerOrders } from "@/lib/queries/orders";
 import { getBuyerOrganizations } from "@/lib/queries/organizations";
 import { createClient } from "@/lib/supabase/server";
 import { UserRole } from "@/types";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BuyerOrgSelector } from "../buyer-org-selector";
+import { BUYER_STATUS_TABS } from "./buyer-status-tabs";
 import { OrdersFilters } from "./orders-filters";
 import { OrdersTable } from "./orders-table";
 
 type OrdersPageSearchParams = {
+  tab?: string;
   status?: string;
   fromDate?: string;
   toDate?: string;
@@ -57,8 +59,11 @@ export default async function BuyerOrdersPage({
     }
   }
 
+  const activeTab = BUYER_STATUS_TABS.find((t) => t.key === params.tab);
+  const statusesForQuery = activeTab?.statuses.length ? [...activeTab.statuses] : undefined;
+
   const ordersResult = await getBuyerOrders(supabase, selectedOrgId, {
-    status: params.status,
+    statuses: statusesForQuery,
     fromDate: params.fromDate,
     toDate: params.toDate,
     sort: params.sort,
@@ -66,6 +71,24 @@ export default async function BuyerOrdersPage({
     page: safePage,
     pageSize: 20,
   });
+
+  const countPromises = BUYER_STATUS_TABS.filter((t) => t.key !== "all").map(
+    async (tab) => {
+      const { count } = await getBuyerOrderCountsByStatus(
+        supabase,
+        selectedOrgId,
+        [...tab.statuses],
+      );
+      return [tab.key, count] as const;
+    },
+  );
+
+  const countEntries = await Promise.all(countPromises);
+  const allCount = countEntries.reduce((sum, [, c]) => sum + c, 0);
+  const tabCounts: Record<string, number> = Object.fromEntries([
+    ["all", allCount],
+    ...countEntries,
+  ]);
 
   const title = isAdmin
     ? selectedOrgName
@@ -91,9 +114,10 @@ export default async function BuyerOrdersPage({
       ) : null}
 
       <OrdersFilters
-        currentStatus={params.status}
+        currentTab={params.tab}
         currentFromDate={params.fromDate}
         currentToDate={params.toDate}
+        tabCounts={tabCounts}
       />
 
       <OrdersTable

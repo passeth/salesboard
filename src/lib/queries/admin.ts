@@ -84,7 +84,9 @@ export type OrganizationWithParent = Pick<
   | "status"
   | "created_at"
 > & {
-  parent: Pick<OrganizationRow, "name"> | null;
+  parent: (Pick<OrganizationRow, "name"> & {
+    grandparent: Pick<OrganizationRow, "name"> | null;
+  }) | null;
 };
 
 export async function getAdminStats(supabase: SupabaseClient): Promise<AdminStats> {
@@ -185,7 +187,9 @@ export async function getAdminProducts(supabase: SupabaseClient, filters?: Admin
     query = query.eq("brand", filters.brand);
   }
 
-  if (filters?.category) {
+  if (filters?.category === "__none__") {
+    query = query.is("category", null);
+  } else if (filters?.category) {
     query = query.eq("category", filters.category);
   }
 
@@ -214,8 +218,10 @@ export async function getAdminOrganizations(
   supabase: SupabaseClient,
   filters?: AdminOrganizationsFilters,
 ) {
+  type GrandparentRaw = Pick<OrganizationRow, "name">[];
+  type ParentRaw = (Pick<OrganizationRow, "name"> & { grandparent: GrandparentRaw | null })[];
   type OrganizationWithParentRaw = Omit<OrganizationWithParent, "parent"> & {
-    parent: Pick<OrganizationRow, "name">[] | null;
+    parent: ParentRaw | null;
   };
 
   const page = filters?.page ?? 1;
@@ -226,7 +232,7 @@ export async function getAdminOrganizations(
   let query = supabase
     .from("organizations")
     .select(
-      "id, name, code, org_type, parent_org_id, country_code, currency_code, status, created_at, parent:parent_org_id(name)",
+      "id, name, code, org_type, parent_org_id, country_code, currency_code, status, created_at, parent:parent_org_id(name, grandparent:parent_org_id(name))",
       { count: "exact" },
     )
     .order(filters?.sort ?? "created_at", { ascending: filters?.sortDir === "asc" });
@@ -250,10 +256,18 @@ export async function getAdminOrganizations(
   const { data, count, error } = await query.range(from, to);
 
   return {
-    data: ((data ?? []) as OrganizationWithParentRaw[]).map((organization) => ({
-      ...organization,
-      parent: organization.parent?.[0] ?? null,
-    })),
+    data: ((data ?? []) as OrganizationWithParentRaw[]).map((organization) => {
+      const parentRaw = organization.parent?.[0] ?? null;
+      return {
+        ...organization,
+        parent: parentRaw
+          ? {
+              name: parentRaw.name,
+              grandparent: parentRaw.grandparent?.[0] ?? null,
+            }
+          : null,
+      };
+    }),
     count: count ?? 0,
     error,
   };
@@ -344,6 +358,7 @@ export async function getAdminOrders(supabase: SupabaseClient, filters?: AdminOr
 
 export type AdminInventoryFilters = {
   search?: string;
+  brand?: string;
   sort?: string;
   sortDir?: "asc" | "desc";
   page?: number;
@@ -364,6 +379,7 @@ export async function getInventorySummary(
     p_sort_dir: filters?.sortDir || "asc",
     p_offset: offset,
     p_limit: pageSize,
+    p_brand: filters?.brand || null,
   });
 
   if (error) throw error;

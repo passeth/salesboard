@@ -46,7 +46,7 @@ export default async function AdminProductsPage({
       sort: params.sort,
       sortDir,
       page: safePage,
-      pageSize: 20,
+      pageSize: 300,
     }),
     getProductBrandsForAdmin(supabase),
     getProductCategoriesForAdmin(supabase),
@@ -69,9 +69,10 @@ export default async function AdminProductsPage({
         products={productsResult.data}
         totalCount={productsResult.count}
         currentPage={safePage}
-        pageSize={20}
+        pageSize={300}
         currentSort={params.sort}
         currentSortDir={params.sortDir}
+        brands={brands}
       />
     </section>
   );

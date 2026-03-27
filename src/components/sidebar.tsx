@@ -48,6 +48,10 @@ const NAV_SECTIONS_BY_ROLE: Record<UserRole, NavSection[]> = {
     {
       items: [
         { href: "/vendor", label: "Dashboard", icon: Home },
+        { href: "/vendor/orders", label: "Orders", icon: ShoppingCart },
+        { href: "/vendor/accounts", label: "Accounts", icon: Building2 },
+        { href: "/vendor/products", label: "Products", icon: Boxes },
+        { href: "/vendor/commissions", label: "Commissions", icon: FileText },
         { href: "/catalog", label: "Catalog", icon: PackageSearch },
       ],
     },
@@ -88,6 +92,7 @@ const NAV_SECTIONS_BY_ROLE: Record<UserRole, NavSection[]> = {
         { href: "/admin/inventory", label: "Inventory", icon: PackageSearch },
         { href: "/admin/orders", label: "All Orders", icon: ShoppingCart },
         { href: "/admin/content-mapping", label: "Content Mapping", icon: FolderSync },
+        { href: "/admin/shipping", label: "Shipping", icon: Globe2 },
       ],
     },
     {
@@ -110,6 +115,16 @@ const NAV_SECTIONS_BY_ROLE: Record<UserRole, NavSection[]> = {
       items: [
         { href: "/logistics/packing", label: "Packing Planner", icon: Boxes },
         { href: "/logistics/packing-list", label: "Packing Lists", icon: FileText },
+      ],
+    },
+    {
+      title: "Vendor",
+      items: [
+        { href: "/vendor", label: "Vendor Dashboard", icon: Home },
+        { href: "/vendor/orders", label: "Vendor Orders", icon: ShoppingCart },
+        { href: "/vendor/accounts", label: "Vendor Accounts", icon: Building2 },
+        { href: "/vendor/products", label: "Vendor Products", icon: Boxes },
+        { href: "/vendor/commissions", label: "Commissions", icon: FileText },
       ],
     },
     {
@@ -145,14 +160,25 @@ function isActive(pathname: string, href: string, allHrefs: string[]) {
   return pathname.startsWith(`${href}/`);
 }
 
-type RouteSection = "admin" | "sales" | "logistics" | "buyer" | "default";
+type RouteSection = "admin" | "sales" | "logistics" | "buyer" | "vendor" | "default";
 
 const SECTION_ACCENT_HSL: Record<RouteSection, string> = {
   admin: "258 90% 66%",
   sales: "132 44% 41%",
   logistics: "29 88% 59%",
   buyer: "242 100% 68%",
+  vendor: "199 89% 48%",
   default: "242 100% 68%",
+};
+
+const SECTION_BG_CLASS: Record<string, string> = {
+  Admin: "bg-purple-500/8",
+  Sales: "bg-green-500/8",
+  Logistics: "bg-orange-500/8",
+  Packing: "bg-amber-500/8",
+  Vendor: "bg-cyan-500/8",
+  Buyer: "bg-blue-500/8",
+  Common: "bg-gray-500/8",
 };
 
 function getRouteSection(pathname: string): RouteSection {
@@ -160,6 +186,7 @@ function getRouteSection(pathname: string): RouteSection {
   if (pathname.startsWith("/sales")) return "sales";
   if (pathname.startsWith("/logistics")) return "logistics";
   if (pathname.startsWith("/buyer")) return "buyer";
+  if (pathname.startsWith("/vendor")) return "vendor";
   return "default";
 }
 
@@ -214,7 +241,11 @@ export function Sidebar({ userRole, userEmail, cartItemCount }: SidebarProps) {
           );
 
           return (
-          <div key={section.title ?? sectionIndex} className={cn(sectionIndex > 0 && "mt-4")}>
+          <div key={section.title ?? sectionIndex} className={cn(
+            sectionIndex > 0 && "mt-4",
+            section.title && SECTION_BG_CLASS[section.title],
+            section.title && "rounded-lg p-1.5",
+          )}>
             {section.title ? (
               <p className={cn(
                 "mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider transition-colors",
