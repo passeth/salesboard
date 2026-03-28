@@ -39,19 +39,19 @@ export function OrderDetailTabs({
             {items.length}
           </span>
         </TabsTrigger>
-        <TabsTrigger value="packing">
-          Packing List
-          {shipments.length > 0 && (
-            <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs tabular-nums">
-              {shipments.length}
-            </span>
-          )}
-        </TabsTrigger>
         <TabsTrigger value="invoice">
           Invoice
           {invoices.length > 0 && (
             <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs tabular-nums">
               {invoices.length}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="packing">
+          Packing List
+          {shipments.length > 0 && (
+            <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs tabular-nums">
+              {shipments.length}
             </span>
           )}
         </TabsTrigger>
@@ -70,12 +70,12 @@ export function OrderDetailTabs({
         <OrderTimeline events={events} />
       </TabsContent>
 
-      <TabsContent value="packing" className="mt-4">
-        <OrderShipment shipments={shipments} />
-      </TabsContent>
-
       <TabsContent value="invoice" className="mt-4">
         <OrderInvoice invoices={invoices} />
+      </TabsContent>
+
+      <TabsContent value="packing" className="mt-4">
+        <OrderShipment shipments={shipments} />
       </TabsContent>
 
       <TabsContent value="documents" className="mt-4">
